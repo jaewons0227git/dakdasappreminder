@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan List</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+        body { background-color: #f2f4f6; padding: 24px; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
+        .page-title { font-size: 24px; font-weight: 700; }
+        
+        /* 날짜 추가 버튼 */
+        .fab-btn {
+            background-color: #0064FF; color: white; border: none;
+            padding: 12px 20px; border-radius: 24px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,100,255,0.3);
+        }
+
+        /* 카드 리스트 */
+        .card-list { display: flex; flex-direction: column; gap: 16px; }
+        .date-card {
+            background: white; padding: 20px; border-radius: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        .date-card:active { transform: scale(0.98); }
+        .card-date { font-size: 18px; font-weight: 700; color: #333; }
+        .card-arrow { color: #b0b8c1; }
+    </style>
+</head>
+<body>
+    <header>
+        <button class="back-btn" onclick="location.href='app.html'">←</button>
+        <div class="page-title">내 계획표 목록</div>
+        <button class="fab-btn" onclick="addNewPlan()">+ 새 계획</button>
+    </header>
+
+    <div class="card-list" id="planList">
+        </div>
+
+    <script>
+        const userName = localStorage.getItem('loginUser');
+
+        window.onload = function() {
+            if(!userName) { location.href='index.html'; return; }
+            loadPlanList();
+        }
+
+        function loadPlanList() {
+            fetch('http://127.0.0.1:5000/get-plan-list', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: userName })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('planList');
+                list.innerHTML = "";
+                data.plans.forEach(p => {
+                    list.innerHTML += `
+                        <div class="date-card" onclick="goToDetail('${p.date}')">
+                            <span class="card-date">${p.date}</span>
+                            <span class="card-arrow">›</span>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        function addNewPlan() {
+            const today = new Date().toISOString().split('T')[0];
+            // 오늘 날짜로 바로 이동 (없으면 detail 페이지에서 생성 로직 처리)
+            location.href = `plan_detail.html?date=${today}&new=true`;
+        }
+
+        function goToDetail(date) {
+            location.href = `plan_detail.html?date=${date}`;
+        }
+    </script>
+</body>
+</html>
