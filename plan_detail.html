@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Daily Plan</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <style>
         /* --- 1. 기본 설정 및 Toss 느낌의 폰트/컬러 --- */
         :root {
@@ -25,6 +26,33 @@
             color: var(--text-main);
         }
 
+        /* 로딩 애니메이션 (양쪽 끝 둥글게, 배경 없음) */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255, 0.95); z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.3s ease;
+        }
+        .spinner-svg {
+            width: 50px; height: 50px;
+            animation: rotate 2s linear infinite;
+        }
+        .spinner-circle {
+            stroke: var(--primary-color);
+            stroke-width: 4;
+            stroke-dasharray: 1, 200;
+            stroke-dashoffset: 0;
+            stroke-linecap: round; /* 핵심: 끝을 둥글게 */
+            fill: none;
+            animation: dash 1.5s ease-in-out infinite;
+        }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+        @keyframes dash {
+            0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+            50% { stroke-dasharray: 89, 200; stroke-dashoffset: -35px; }
+            100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124px; }
+        }
+
         /* --- 2. 상단 헤더 --- */
         .top-bar {
             padding: 12px 20px;
@@ -33,17 +61,20 @@
             flex-shrink: 0;
             background: white; z-index: 10;
         }
-        .date-display { font-size: 17px; font-weight: 700; color: var(--text-main); border: none; outline: none; background: transparent; }
+        .date-display { 
+            font-size: 17px; font-weight: 700; color: var(--text-main); 
+            border: none; outline: none; background: transparent; 
+        }
         
         .save-btn { 
             background: var(--primary-color); color: white; border: none; padding: 8px 14px; 
-            border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; 
+            border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; 
             transition: transform 0.1s;
         }
         .save-btn:active { transform: scale(0.95); }
-        .back-btn { background: none; border: none; font-size: 22px; margin-right: 10px; cursor: pointer; color: #333; }
+        .back-btn { background: none; border: none; margin-right: 10px; cursor: pointer; color: #333; display: flex; align-items: center; }
 
-        /* --- 3. 메인 컨텐츠 (좌우 분할) --- */
+        /* --- 3. 메인 컨텐츠 --- */
         .main-container {
             flex-grow: 1; display: flex; height: 100%; overflow: hidden;
         }
@@ -62,29 +93,27 @@
         
         .grid-row { display: flex; align-items: center; height: 26px; width: 100%; padding-left: 5px; }
         
-        /* [수정됨] 시간 라벨 정렬 버그 해결 */
         .time-label {
-            width: 35px; /* 고정 너비 */
-            font-size: 12px; color: var(--text-sub); 
-            display: flex; justify-content: center; align-items: center; /* 중앙 정렬 */
-            margin-right: 8px; font-variant-numeric: tabular-nums; /* 숫자 폭 통일 */
+            width: 35px; font-size: 12px; color: var(--text-sub); 
+            display: flex; justify-content: center; align-items: center; 
+            margin-right: 8px; font-variant-numeric: tabular-nums; 
         }
         
         .cell-container { display: flex; }
         .cell {
             width: 15px; height: 15px; /* 정사각형 */
-            border: 1px solid #d1d6db; margin-right: 2px; border-radius: 3px; cursor: pointer;
-            transition: background-color 0.1s, transform 0.1s;
+            border: 1px solid #d1d6db; margin-right: 2px; border-radius: 4px; /* 약간 둥글게 */
+            cursor: pointer;
+            transition: background-color 0.1s;
         }
         .cell.filled { background-color: var(--primary-color); border-color: var(--primary-color); }
-        /* 마지막 선택 지점 표시 (UX) */
         .cell.range-start { border-color: #ff4d4d; border-width: 2px; }
 
         /* 하단 버튼 및 통계 */
         .left-footer { padding: 15px; border-top: 1px solid var(--line-color); background: #f9fafb; }
         .reset-btn {
             width: 100%; padding: 8px; margin-bottom: 15px;
-            background: white; border: 1px solid #d1d6db; border-radius: 8px;
+            background: white; border: 1px solid #d1d6db; border-radius: 12px;
             color: var(--text-sub); font-size: 12px; font-weight: 600; cursor: pointer;
             transition: all 0.2s;
         }
@@ -116,11 +145,7 @@
             display: flex; justify-content: center; align-items: center; 
             width: 24px; height: 24px; margin: 0 auto; cursor: pointer;
         }
-        
-        /* 숨겨진 체크박스 */
         .hidden-checkbox { display: none; }
-        
-        /* 커스텀 테두리 */
         .custom-box {
             width: 20px; height: 20px; border: 2px solid #d1d6db; border-radius: 6px;
             position: relative; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
@@ -128,12 +153,10 @@
         .hidden-checkbox:checked + .custom-box {
             background-color: var(--primary-color); border-color: var(--primary-color);
         }
-
-        /* 체크 아이콘 (SVG 애니메이션) */
         .check-svg { width: 14px; height: 14px; fill: none; stroke: white; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 20; stroke-dashoffset: 20; transition: stroke-dashoffset 0.3s ease; }
         .hidden-checkbox:checked + .custom-box .check-svg { stroke-dashoffset: 0; }
 
-        /* --- 5. 모달 (Toss Style) --- */
+        /* --- 5. 모달 (Toss Style: 부드러운 Pop 모션) --- */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 100;
@@ -143,13 +166,14 @@
         .modal-overlay.hide { opacity: 0; }
 
         .modal-box {
-            background: white; padding: 30px; border-radius: 24px; text-align: center; width: 280px;
-            transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: white; padding: 24px; border-radius: 24px; text-align: center; width: 280px;
+            transform: scale(0.8); 
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 튕기는 효과 */
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
         }
         .modal-overlay.show .modal-box { transform: scale(1); }
+        .modal-overlay.hide .modal-box { transform: scale(0.8); transition: transform 0.2s ease-in; }
         
-        .modal-icon { width: 50px; height: 50px; margin-bottom: 15px; display: inline-block; }
         .modal-msg { font-size: 17px; font-weight: 700; color: #191f28; margin-bottom: 24px; line-height: 1.4; }
         .modal-btn {
             background: var(--primary-color); color: white; width: 100%; padding: 14px;
@@ -158,25 +182,31 @@
         }
         .modal-btn:active { background-color: #0050cc; }
         
-        /* 체크 아이콘 애니메이션용 (CSS Drawing) */
         .circle-check {
             width: 50px; height: 50px; border-radius: 50%; background: var(--primary-color);
             position: relative; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px auto;
             animation: popIcon 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
         .circle-check::after {
             content: ''; width: 14px; height: 24px; border: solid white; border-width: 0 4px 4px 0;
             transform: rotate(45deg); margin-top: -4px;
         }
-
         @keyframes popIcon { from { transform: scale(0); } to { transform: scale(1); } }
     </style>
 </head>
 <body>
+    <div id="loadingOverlay">
+        <svg class="spinner-svg" viewBox="25 25 50 50">
+            <circle class="spinner-circle" cx="50" cy="50" r="20"></circle>
+        </svg>
+    </div>
 
     <div class="top-bar">
         <div style="display:flex; align-items:center;">
-            <button class="back-btn" onclick="location.href='today.html'">←</button>
+            <button class="back-btn" onclick="location.href='today.html'">
+                <span class="material-symbols-rounded">arrow_back</span>
+            </button>
             <input type="date" id="datePicker" class="date-display">
         </div>
         <button class="save-btn" onclick="saveData()">저장</button>
@@ -228,7 +258,7 @@
 
     <div class="modal-overlay" id="modal">
         <div class="modal-box">
-            <div style="display:flex; justify-content:center; margin-bottom:20px;">
+            <div style="display:flex; justify-content:center;">
                 <div class="circle-check"></div>
             </div>
             <div class="modal-msg" id="modalMsg">완료했습니다!</div>
@@ -237,35 +267,56 @@
     </div>
 
     <script>
-        // PythonAnywhere 주소로 변경
         const API_URL = 'https://jaewondev.pythonanywhere.com';
         const userName = localStorage.getItem('loginUser') || "GUEST";
-        const urlParams = new URLSearchParams(window.location.search);
+        
+        // URL 파라미터 처리
+        let urlParams = new URLSearchParams(window.location.search);
         let currentDate = urlParams.get('date') || new Date().toISOString().split('T')[0];
 
-        // 6시 ~ 24시 (0시) -> 총 18시간
+        // 시간표 설정 (6시~24시)
         const START_HOUR = 6;
         const END_HOUR = 24; 
         const TOTAL_HOURS = END_HOUR - START_HOUR;
         const TOTAL_CELLS = TOTAL_HOURS * 6; // 10분 단위
 
+        // 전체 데이터 구조
         let planData = {
             date: currentDate,
-            grid: Array(TOTAL_CELLS).fill(0),
-            tasks: []
+            grid: Array(TOTAL_CELLS).fill(0), // 왼쪽 사각형들 상태
+            tasks: [] // 할일 목록
         };
         
-        // 스마트 채우기를 위한 변수
         let lastClickedIndex = null;
 
         window.onload = function() {
-            document.getElementById('datePicker').value = currentDate;
-            if(urlParams.get('new') === 'true') {
-                for(let i=0; i<5; i++) addRowData();
-                renderAll();
-            } else {
-                fetchData();
-            }
+            // 0.8초 후 로딩 제거
+            setTimeout(() => {
+                const loader = document.getElementById('loadingOverlay');
+                loader.style.opacity = '0';
+                setTimeout(() => { loader.style.display = 'none'; }, 300);
+            }, 2000);
+
+            // 날짜 피커 초기화
+            const datePicker = document.getElementById('datePicker');
+            datePicker.value = currentDate;
+            
+            // [중요] 날짜 변경 시 URL 변경 및 데이터 새로 불러오기
+            datePicker.addEventListener('change', function() {
+                const newDate = this.value;
+                const newUrl = `${window.location.pathname}?date=${newDate}&new=true`;
+                
+                // 페이지 새로고침 없이 주소창 변경
+                window.history.pushState({path: newUrl}, '', newUrl);
+                
+                // 날짜 갱신 및 데이터 페치
+                currentDate = newDate;
+                planData.date = newDate;
+                fetchData(); 
+            });
+
+            // 초기 데이터 로드
+            fetchData();
         };
 
         function fetchData() {
@@ -278,22 +329,27 @@
             .then(data => {
                 if(data.success) {
                     planData = data.plan;
-                    // 그리드 크기가 다를 경우(이전 버전 데이터) 초기화 방지 로직 필요하나 여기선 덮어씀
-                    if(planData.grid.length !== TOTAL_CELLS) {
-                        // 크기 안맞으면 새 규격으로 초기화 (데이터 손실 주의)
+                    // 그리드 크기 검증 (예전 데이터 호환용)
+                    if(!planData.grid || planData.grid.length !== TOTAL_CELLS) {
                         planData.grid = Array(TOTAL_CELLS).fill(0); 
                     }
                 } else {
+                    // 데이터 없으면 초기화
+                    planData = {
+                        date: currentDate,
+                        grid: Array(TOTAL_CELLS).fill(0),
+                        tasks: []
+                    };
                     for(let i=0; i<5; i++) addRowData();
                 }
                 renderAll();
             })
             .catch(err => {
-                alert("서버 연결 실패. 파이썬애니웨어 서버가 켜져있는지 확인하세요.");
+                console.error("서버 연결 실패:", err);
             });
         }
 
-        // --- 렌더링 ---
+        // --- 렌더링 함수들 ---
         function renderAll() {
             renderGrid();
             renderTasks();
@@ -306,11 +362,8 @@
             
             for(let h=0; h < TOTAL_HOURS; h++) {
                 const hourLabel = START_HOUR + h;
-                
                 const row = document.createElement('div');
                 row.className = 'grid-row';
-                
-                // 시간 라벨 (Flexbox로 중앙 정렬되어 더 이상 밀리지 않음)
                 row.innerHTML = `<div class="time-label">${hourLabel}</div>`;
                 
                 const cellContainer = document.createElement('div');
@@ -319,7 +372,7 @@
                 for(let m=0; m<6; m++) {
                     const idx = h*6 + m;
                     const cell = document.createElement('div');
-                    // 클래스 적용
+                    // 저장된 grid 상태 반영
                     let classes = `cell ${planData.grid[idx] ? 'filled' : ''}`;
                     if(lastClickedIndex === idx) classes += ' range-start';
                     
@@ -332,37 +385,20 @@
             }
         }
 
-        // --- 핵심 기능: 스마트 채우기 (Range Fill) ---
         function handleCellClick(idx) {
-            // 1. 범위 채우기 로직 (이전에 클릭한 인덱스가 있고, 다른 칸을 클릭했을 때)
             if (lastClickedIndex !== null && lastClickedIndex !== idx) {
                 const start = Math.min(lastClickedIndex, idx);
                 const end = Math.max(lastClickedIndex, idx);
-                
-                // 범위 내를 모두 1(채움)로 변경. 만약 이미 다 차있으면 비울 수도 있지만, 보통 채우기를 원함.
-                for(let i=start; i<=end; i++) {
-                    planData.grid[i] = 1; 
-                }
-                
-                // 범위 지정 후 초기화
+                for(let i=start; i<=end; i++) planData.grid[i] = 1; 
                 lastClickedIndex = null;
             } else {
-                // 2. 일반 토글 (클릭한 칸 반전) 및 시작점 설정
                 planData.grid[idx] = planData.grid[idx] ? 0 : 1;
-                
-                // 같은 칸을 두 번 누르면 범위 지정 취소
-                if(lastClickedIndex === idx) {
-                    lastClickedIndex = null;
-                } else {
-                    // 채워진 칸을 누를 때만 범위 시작점으로 잡음 (비워진 칸을 누르면 그냥 토글만)
-                    if(planData.grid[idx] === 1) {
-                        lastClickedIndex = idx;
-                    } else {
-                        lastClickedIndex = null;
-                    }
+                if(lastClickedIndex === idx) lastClickedIndex = null;
+                else {
+                    if(planData.grid[idx] === 1) lastClickedIndex = idx;
+                    else lastClickedIndex = null;
                 }
             }
-            
             renderGrid();
             calcStats();
         }
@@ -402,11 +438,10 @@
 
         function toggleCheck(idx) {
             planData.tasks[idx].done = !planData.tasks[idx].done;
-            // 리렌더링하지 않고 체크박스 상태만 유지해도 되지만, 데이터 동기화를 위해
-            // 애니메이션은 CSS가 처리하므로 데이터만 바꿈
             if(planData.tasks[idx].done) {
                 showModal(`"${planData.tasks[idx].content || '할 일'}"<br>완료했습니다!`);
             }
+            // 체크 상태도 저장해야 하므로 자동 저장 혹은 수동 저장 유도 (여기선 변수에만 반영)
         }
 
         function updateTask(idx, key, val) {
@@ -419,13 +454,13 @@
         function addRow() { addRowData(); renderTasks(); }
 
         function calcStats() {
-            // 18시간 기준
+            // 그리드 통계
             const filled = planData.grid.filter(v => v===1).length;
             const totalMin = TOTAL_HOURS * 60; 
             const remain = totalMin - (filled * 10);
-            
             document.getElementById('availTime').innerText = minToTime(remain);
 
+            // 실제 공부시간 통계
             let actSum = 0;
             planData.tasks.forEach(t => { if(t.act) actSum += parseInt(t.act); });
             document.getElementById('totalTime').innerText = minToTime(actSum);
@@ -441,6 +476,8 @@
         // --- 저장 및 모달 ---
         function saveData() {
             planData.date = document.getElementById('datePicker').value;
+            
+            // 서버로 planData 전체(grid, tasks 포함) 전송
             fetch(`${API_URL}/save-plan`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -448,7 +485,14 @@
             })
             .then(res => res.json())
             .then(data => {
-                showModal("계획표가 저장되었습니다.");
+                if(data.success) {
+                    showModal("계획표가 저장되었습니다.");
+                } else {
+                    alert("저장 실패: " + data.message);
+                }
+            })
+            .catch(err => {
+                alert("서버 통신 오류");
             });
         }
 
@@ -460,13 +504,11 @@
         }
 
         function closeModal() {
-            // 닫힘 애니메이션
             modalEl.classList.remove('show');
             modalEl.classList.add('hide');
-            // 애니메이션 끝난 후 display:none 처리는 CSS transitionend 이벤트나 setTimeout으로
             setTimeout(() => {
                 if(modalEl.classList.contains('hide')) {
-                    modalEl.classList.remove('show', 'hide'); // 클래스 초기화
+                    modalEl.classList.remove('show', 'hide'); 
                 }
             }, 300);
         }
