@@ -4,20 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plan List</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Pretendard", Roboto, sans-serif; }
         body { background-color: #f2f4f6; padding: 24px; }
         
+        /* 로딩 애니메이션 (뒷배경 없음, 둥근 끝) */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.9); /* 살짝 투명하거나 완전 흰색 */
+            z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.3s ease;
+        }
+        .spinner-svg {
+            width: 50px; height: 50px;
+            animation: rotate 2s linear infinite;
+        }
+        .spinner-circle {
+            stroke: #3182f6;
+            stroke-width: 4;
+            stroke-dasharray: 1, 200;
+            stroke-dashoffset: 0;
+            stroke-linecap: round; /* 끝을 둥글게 */
+            fill: none;
+            animation: dash 1.5s ease-in-out infinite;
+        }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+        @keyframes dash {
+            0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+            50% { stroke-dasharray: 89, 200; stroke-dashoffset: -35px; }
+            100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124px; }
+        }
+
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
+        .back-btn { background: none; border: none; cursor: pointer; color: #333; display: flex; align-items: center; }
         .page-title { font-size: 24px; font-weight: 700; }
         
-        /* 날짜 추가 버튼 */
+        /* 날짜 추가 버튼 (그림자 제거, 둥근 사각형) */
         .fab-btn {
-            background-color: #0064FF; color: white; border: none;
-            padding: 12px 20px; border-radius: 24px; font-weight: 600; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,100,255,0.3);
+            background-color: #3182f6; color: white; border: none;
+            padding: 12px 20px; border-radius: 16px; 
+            font-weight: 600; cursor: pointer;
+            box-shadow: none; /* 그림자 제거 */
+            transition: background-color 0.2s;
         }
+        .fab-btn:active { background-color: #0050cc; }
 
         /* 카드 리스트 */
         .card-list { display: flex; flex-direction: column; gap: 16px; }
@@ -29,12 +61,22 @@
         }
         .date-card:active { transform: scale(0.98); }
         .card-date { font-size: 18px; font-weight: 700; color: #333; }
+        
+        .material-symbols-rounded { font-size: 24px; }
         .card-arrow { color: #b0b8c1; }
     </style>
 </head>
 <body>
+    <div id="loadingOverlay">
+        <svg class="spinner-svg" viewBox="25 25 50 50">
+            <circle class="spinner-circle" cx="50" cy="50" r="20"></circle>
+        </svg>
+    </div>
+
     <header>
-        <button class="back-btn" onclick="location.href='app.html'">←</button>
+        <button class="back-btn" onclick="location.href='app.html'">
+            <span class="material-symbols-rounded">arrow_back</span>
+        </button>
         <div class="page-title">내 계획표 목록</div>
         <button class="fab-btn" onclick="addNewPlan()">+ 새 계획</button>
     </header>
@@ -43,15 +85,23 @@
         </div>
 
     <script>
+        const API_URL = 'https://jaewondev.pythonanywhere.com';
         const userName = localStorage.getItem('loginUser');
 
         window.onload = function() {
+            // 0.8초 로딩
+            setTimeout(() => {
+                const loader = document.getElementById('loadingOverlay');
+                loader.style.opacity = '0';
+                setTimeout(() => { loader.style.display = 'none'; }, 300);
+            }, 3000);
+
             if(!userName) { location.href='index.html'; return; }
             loadPlanList();
         }
 
         function loadPlanList() {
-            fetch('http://127.0.0.1:5000/get-plan-list', {
+            fetch(`${API_URL}/get-plan-list`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: userName })
@@ -60,20 +110,26 @@
             .then(data => {
                 const list = document.getElementById('planList');
                 list.innerHTML = "";
+                
+                if(data.plans.length === 0) {
+                    list.innerHTML = "<div style='text-align:center; color:#8b95a1; margin-top:50px;'>작성된 계획이 없습니다.</div>";
+                    return;
+                }
+
                 data.plans.forEach(p => {
                     list.innerHTML += `
                         <div class="date-card" onclick="goToDetail('${p.date}')">
                             <span class="card-date">${p.date}</span>
-                            <span class="card-arrow">›</span>
+                            <span class="card-arrow material-symbols-rounded">chevron_right</span>
                         </div>
                     `;
                 });
-            });
+            })
+            .catch(err => console.error(err));
         }
 
         function addNewPlan() {
             const today = new Date().toISOString().split('T')[0];
-            // 오늘 날짜로 바로 이동 (없으면 detail 페이지에서 생성 로직 처리)
             location.href = `plan_detail.html?date=${today}&new=true`;
         }
 
