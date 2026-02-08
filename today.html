@@ -9,10 +9,10 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Pretendard", Roboto, sans-serif; }
         body { background-color: #f2f4f6; padding: 24px; min-height: 100vh; position: relative; }
         
-        /* 로딩 애니메이션 (뒷배경 없음, 둥근 끝) */
+        /* 로딩 애니메이션 */
         #loadingOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.9); /* 살짝 투명하거나 완전 흰색 */
+            background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
             display: flex; justify-content: center; align-items: center;
             transition: opacity 0.3s ease;
@@ -26,7 +26,7 @@
             stroke-width: 4;
             stroke-dasharray: 1, 200;
             stroke-dashoffset: 0;
-            stroke-linecap: round; /* 둥근 끝 처리 */
+            stroke-linecap: round;
             fill: none;
             animation: dash 1.5s ease-in-out infinite;
         }
@@ -41,6 +41,14 @@
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .back-btn { background: none; border: none; cursor: pointer; color: #333; display: flex; align-items: center; }
         .page-title { font-size: 20px; font-weight: 700; color: #191f28; }
+        
+        /* [수정] 상단 텍스트 버튼 스타일 */
+        .add-btn {
+            background: none; border: none; cursor: pointer;
+            font-size: 16px; font-weight: 600; color: #3182f6;
+            padding: 4px 8px;
+        }
+        .add-btn:active { opacity: 0.7; }
 
         /* 카드 리스트 */
         .date-card {
@@ -52,15 +60,6 @@
         .date-card:active { transform: scale(0.98); }
         .card-date { font-size: 18px; font-weight: 600; color: #333; }
         .card-arrow { color: #b0b8c1; font-size: 24px; }
-
-        .fab {
-            position: fixed; bottom: 30px; right: 30px;
-            width: 56px; height: 56px; border-radius: 50%;
-            background-color: #3182f6; color: white;
-            border: none; box-shadow: 0 4px 12px rgba(49, 130, 246, 0.3);
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer; font-size: 30px; z-index: 100;
-        }
 
         /* [추가] 알람 오버레이 스타일 (블러 효과 적용) */
         #alarmOverlay {
@@ -117,19 +116,17 @@
             <span class="material-symbols-rounded">arrow_back</span>
         </button>
         <div class="page-title">계획 목록</div>
-        <div style="width: 24px;"></div> 
+        <button class="add-btn" onclick="addNewPlan()">계획 추가</button>
     </header>
 
     <div id="planList"></div>
-
-    <button class="fab" onclick="addNewPlan()">+</button>
 
     <script>
         const API_URL = 'https://jaewondev.pythonanywhere.com';
         const userName = localStorage.getItem('loginUser');
         let currentDate = new Date();
 
-        // [추가] 리마인더 및 알람 관련 변수
+        // 리마인더 및 알람 관련 변수
         let reminders = [];
         let activeAlarm = null;
         let snoozedAlarms = [];
@@ -156,11 +153,11 @@
 
             loadPlanList();
             
-            // [추가] 리마인더 로드 및 알람 체크 시작
+            // 리마인더 로드 및 알람 체크 시작
             loadReminders();
             setInterval(checkAlarm, 1000);
 
-            // [추가] 오디오 정책 우회를 위한 이벤트 리스너
+            // 오디오 정책 우회를 위한 이벤트 리스너
             document.body.addEventListener('touchstart', unlockAudio, { once: true });
             document.body.addEventListener('click', unlockAudio, { once: true });
         }
@@ -203,7 +200,7 @@
         }
 
         /* --------------------------------------------------------
-           [추가] 리마인더 및 알람 로직
+           리마인더 및 알람 로직
         -------------------------------------------------------- */
         function unlockAudio() {
             sound1.play().then(() => { sound1.pause(); sound1.currentTime = 0; }).catch(() => {});
