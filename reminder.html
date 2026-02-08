@@ -70,6 +70,7 @@
         .day-check { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #e5e8eb; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; transition: all 0.2s; }
         .day-check.active { background-color: #3182f6; color: white; border-color: #3182f6; }
         .save-btn { width: 100%; background-color: #3182f6; color: white; padding: 16px; border-radius: 16px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+        .cancel-btn { width: 100%; background-color: #f2f4f6; color: #333; padding: 16px; border-radius: 16px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
 
         /* 색상 선택기 */
         .color-group { display: flex; gap: 12px; justify-content: flex-start; }
@@ -211,7 +212,10 @@
                 <div class="day-check" onclick="toggleDay(6, this)">토</div>
             </div>
         </div>
-        <button class="save-btn" id="saveBtnText" onclick="saveReminder()">저장하기</button>
+        <div style="display:flex; gap:10px;">
+            <button class="cancel-btn" onclick="cancelForm()">취소</button>
+            <button class="save-btn" id="saveBtnText" onclick="saveReminder()" style="margin-top:10px;">저장하기</button>
+        </div>
     </div>
 
     <div class="list-section" id="listSection">
@@ -234,8 +238,10 @@
         let snoozedAlarms = [];
         let tpSelection = { ampm: 'AM', hour: '12', min: '00' };
 
-        const sound1 = new Audio('https://drive.google.com/uc?export=download&id=1gR40urBgaolXetwLWWP6wQfVG80cGHrW');
-        const sound2 = new Audio('https://drive.google.com/uc?export=download&id=1kIfvcsX7c6t_faDUYvW7wsYipnSOn8Ot');
+        // sound1을 먼저 울릴 사운드(sound2.mp3)로 교체
+        const sound1 = new Audio('https://appreminder.corerepublix.kro.kr/other/sound2.mp3');
+        // sound2를 나중에 울릴 사운드(sound1.mp3)로 교체
+        const sound2 = new Audio('https://appreminder.corerepublix.kro.kr/other/sound1.mp3');
         sound2.loop = true;
 
         let pressTimer;
@@ -482,13 +488,41 @@
         }
 
         function showScheduledList() {
-            const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const currentTime = now.toTimeString().substring(0, 5);
+
             const futureList = reminders.filter(r => {
-                if(r.repeat_type === 'none') return r.target_date >= today;
-                if(r.repeat_type === 'weekly_once') {
-                    return r.target_date >= today || isSameWeek(r.target_date, today);
+                let isScheduled = false;
+                if(r.repeat_type === 'none') {
+                    isScheduled = r.target_date >= today;
+                } else if(r.repeat_type === 'weekly_once') {
+                    isScheduled = r.target_date >= today || isSameWeek(r.target_date, today);
+                } else {
+                    isScheduled = true;
                 }
-                return true; 
+
+                if(!isScheduled) return false;
+
+                // 오늘 날짜이거나, 오늘 반복되는 일정인 경우 시간이 지났으면 제외
+                let isTodayEvent = false;
+                if(r.repeat_type === 'none' && r.target_date === today) isTodayEvent = true;
+                else if(r.repeat_type === 'daily') isTodayEvent = true;
+                else if((r.repeat_type === 'weekly' || r.repeat_type === 'weekly_once') && r.repeat_days) {
+                    const todayIdx = now.getDay();
+                    const days = r.repeat_days.split(',').map(Number);
+                    if(days.includes(todayIdx)) {
+                        if(r.repeat_type === 'weekly_once') {
+                            if(isSameWeek(r.target_date, today)) isTodayEvent = true;
+                        } else {
+                            isTodayEvent = true;
+                        }
+                    }
+                }
+
+                if(isTodayEvent && r.time < currentTime) return false;
+
+                return true;
             }).sort((a,b) => a.time.localeCompare(b.time));
             
             renderList(futureList, "예정된 리마인더");
@@ -559,6 +593,13 @@
             selectColor('#FFB3BA', document.querySelectorAll('.color-opt')[0]);
         }
 
+        function cancelForm() {
+            document.getElementById('reminderForm').style.display = 'none';
+            if(selectedDate) {
+                document.getElementById('addBtn').style.display = 'inline-block';
+            }
+        }
+
         function editReminder(id) {
             const r = reminders.find(item => item.id === id);
             if(!r) return;
@@ -616,7 +657,8 @@
             for(let i=1; i<=12; i++) {
                 hC.innerHTML += `<div class="tp-item ${i===12?'selected':''}" onclick="setTp('hour', '${i}', this)">${i}</div>`;
             }
-            for(let i=0; i<60; i+=5) {
+            // 5분 단위(i+=5)에서 1분 단위(i++)로 수정
+            for(let i=0; i<60; i++) {
                 const val = String(i).padStart(2,'0');
                 mC.innerHTML += `<div class="tp-item ${i===0?'selected':''}" onclick="setTp('min', '${val}', this)">${val}</div>`;
             }
