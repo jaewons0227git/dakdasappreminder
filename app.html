@@ -23,6 +23,7 @@
             flex-direction: column;
             padding: 24px;
             overflow: hidden;
+            position: relative; /* 알람 오버레이 위치 잡기 위해 추가 */
         }
 
         /* 헤더 영역 */
@@ -248,9 +249,68 @@
             0% { transform: scale(0.9); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
         }
+
+        /* --------------------------------------------------------
+           [추가] 알람 오버레이 스타일 (블러 효과 적용)
+        -------------------------------------------------------- */
+        #alarmOverlay {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            /* 배경 블러 처리 및 반투명 그라디언트 오버레이 */
+            background: rgba(0, 0, 0, 0.3); /* 약간 어둡게 깔아줌 */
+            backdrop-filter: blur(20px); /* 배경 블러 효과 */
+            -webkit-backdrop-filter: blur(20px); /* 사파리 지원 */
+            z-index: 10000; 
+            display: none; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            text-align: center; 
+            padding: 40px;
+            animation: fadeInAlarm 0.5s ease;
+        }
+        
+        /* 알람 내용 컨테이너 (그라디언트 배경) */
+        .alarm-content-box {
+            background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%, #a18cd1 100%);
+            background-size: 200% 200%;
+            animation: gradientBG 5s ease infinite;
+            padding: 40px 30px;
+            border-radius: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        @keyframes fadeInAlarm {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        .alarm-title { font-size: 28px; font-weight: 800; color: white; margin-bottom: 10px; }
+        .alarm-msg { font-size: 16px; color: rgba(255,255,255,0.9); margin-bottom: 30px; }
+        .alarm-btn { width: 100%; padding: 16px; border-radius: 20px; border: none; font-size: 16px; font-weight: 700; margin-bottom: 12px; cursor: pointer; transition: transform 0.1s; }
+        .alarm-btn:active { transform: scale(0.95); }
+        .stop-btn { background: white; color: #f04452; }
+        .snooze-btn { background: rgba(255,255,255,0.3); color: white; backdrop-filter: blur(5px); }
     </style>
 </head>
 <body>
+    
+    <div id="alarmOverlay">
+        <div class="alarm-content-box">
+            <div class="alarm-title" id="alarmTitleText">리마인더</div>
+            <div class="alarm-msg" id="alarmSubText">을/를 할 시간입니다.</div>
+            <button class="alarm-btn stop-btn" onclick="stopAlarm()">종료</button>
+            <button class="alarm-btn snooze-btn" onclick="snoozeAlarm()">연기 (재알림)</button>
+        </div>
+    </div>
 
     <header>
         <div class="welcome-text" id="welcome-message">
@@ -301,6 +361,15 @@
         let messageInterval = null;
         let msgIndex = 0; // 0: 날씨멘트, 1: 응원멘트
 
+        // [추가] 리마인더 및 알람 관련 변수
+        const API_URL = 'https://jaewondev.pythonanywhere.com';
+        let reminders = [];
+        let activeAlarm = null;
+        let snoozedAlarms = [];
+        const sound1 = new Audio('https://drive.google.com/uc?export=download&id=1gR40urBgaolXetwLWWP6wQfVG80cGHrW');
+        const sound2 = new Audio('https://drive.google.com/uc?export=download&id=1kIfvcsX7c6t_faDUYvW7wsYipnSOn8Ot');
+        sound2.loop = true;
+
         window.onload = function() {
             const storedUser = localStorage.getItem('loginUser');
             
@@ -330,6 +399,14 @@
             
             // 5. 멘트 롤링 시작 (5초마다)
             startMessageRotation();
+
+            // [추가] 리마인더 데이터 로드 및 알람 체크 시작
+            loadReminders();
+            setInterval(checkAlarm, 1000);
+
+            // [추가] 오디오 정책 우회를 위한 이벤트 리스너 (사용자 첫 터치시 오디오 해금)
+            document.body.addEventListener('touchstart', unlockAudio, { once: true });
+            document.body.addEventListener('click', unlockAudio, { once: true });
         }
 
         function logout() {
@@ -608,6 +685,104 @@
             if(msgEl) {
                 msgEl.innerText = msgs[msgIndex];
             }
+        }
+
+        /* --------------------------------------------------------
+           [추가] 리마인더 및 알람 로직 (backend 연동)
+        -------------------------------------------------------- */
+        function unlockAudio() {
+            sound1.play().then(() => { sound1.pause(); sound1.currentTime = 0; }).catch(() => {});
+            sound2.play().then(() => { sound2.pause(); sound2.currentTime = 0; }).catch(() => {});
+        }
+
+        function loadReminders() {
+            const userName = localStorage.getItem('loginUser');
+            if(!userName) return;
+
+            fetch(`${API_URL}/get-reminders`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name: userName })
+            })
+            .then(res => res.json())
+            .then(data => {
+                reminders = data.reminders || [];
+            })
+            .catch(err => console.log('알람 데이터 로드 실패', err));
+        }
+
+        function checkAlarm() {
+            const now = new Date();
+            if(now.getSeconds() !== 0) return;
+            const timeStr = now.toTimeString().substring(0, 5);
+            const dateStr = now.toISOString().split('T')[0];
+            const day = now.getDay();
+
+            reminders.forEach(r => {
+                let trigger = false;
+                if(r.time === timeStr) {
+                    if(r.repeat_type === 'daily') trigger = true;
+                    if(r.repeat_type === 'none' && r.target_date === dateStr) trigger = true;
+                    if(r.repeat_type === 'weekly' && r.repeat_days.split(',').map(Number).includes(day)) trigger = true;
+                    if(r.repeat_type === 'weekly_once' && isSameWeek(dateStr, r.target_date)) {
+                        if(r.repeat_days.split(',').map(Number).includes(day)) trigger = true;
+                    }
+                }
+                if(trigger) triggerAlarm(r);
+            });
+
+            snoozedAlarms.forEach((item, idx) => {
+                if(item.triggerTime === timeStr) {
+                    triggerAlarm(item.original);
+                    snoozedAlarms.splice(idx, 1);
+                }
+            });
+        }
+
+        function isSameWeek(date1Str, date2Str) {
+            const d1 = new Date(date1Str);
+            const d2 = new Date(date2Str);
+            const d1Sun = new Date(d1); d1Sun.setDate(d1.getDate() - d1.getDay());
+            const d2Sun = new Date(d2); d2Sun.setDate(d2.getDate() - d2.getDay());
+            return d1Sun.toDateString() === d2Sun.toDateString();
+        }
+
+        function triggerAlarm(r) {
+            activeAlarm = r;
+            document.getElementById('alarmTitleText').innerText = r.title;
+            document.getElementById('alarmSubText').innerText = `${r.title}을/를 할 시간입니다.`;
+            document.getElementById('alarmOverlay').style.display = 'flex';
+            
+            sound1.currentTime = 0;
+            sound2.currentTime = 0;
+            sound1.play().then(() => {
+                sound1.onended = () => {
+                    sound2.play();
+                };
+            }).catch(e => console.log("Audio Error:", e));
+        }
+
+        function stopAlarm() { 
+            closeOverlay(); 
+        }
+        
+        function snoozeAlarm() {
+            closeOverlay();
+            if(activeAlarm && activeAlarm.snooze > 0) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() + activeAlarm.snooze);
+                snoozedAlarms.push({ triggerTime: now.toTimeString().substring(0,5), original: activeAlarm });
+                alert(`${activeAlarm.snooze}분 뒤 다시 알립니다`);
+            }
+        }
+        
+        function closeOverlay() {
+            document.getElementById('alarmOverlay').style.display = 'none';
+            sound1.pause();
+            sound2.pause();
+            sound1.currentTime = 0;
+            sound2.currentTime = 0;
+            sound1.onended = null;
         }
     </script>
 </body>
