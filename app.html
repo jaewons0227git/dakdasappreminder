@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Home</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    
     <style>
         /* 기본 리셋 및 폰트 */
         * {
@@ -37,15 +39,17 @@
             font-weight: 700;
             color: #191f28;
             animation: fadeIn 0.6s ease-out;
+            line-height: 1.4;
         }
 
-        /* 날짜 스타일 */
-        .today-date {
-            font-size: 16px;
+        /* 날짜 및 시간 스타일 */
+        .today-info {
+            font-size: 15px;
             color: #8b95a1;
             font-weight: 500;
             margin-left: 8px;
             vertical-align: middle;
+            display: inline-block;
         }
 
         .logout-btn {
@@ -112,74 +116,69 @@
             object-fit: contain;
         }
 
-        /* [수정됨] 날씨 카드 스타일 */
-        /* 기본 배경은 JS에서 제어하지만 초기값은 오후(기존) 스타일로 둠 */
+        /* 날씨 카드 스타일 */
         .card.weather {
             grid-column: 1;
             grid-row: 1 / 2;
-            /* 배경 전환 부드럽게 */
             transition: background 1.5s ease-in-out; 
             animation-delay: 0.05s;
             padding: 20px;
             justify-content: flex-start;
             color: white;
-            /* 기본값: 오후 스타일 */
-            background: linear-gradient(135deg, #6dd5fa 0%, #001f5b 100%);
+            background: linear-gradient(135deg, #6dd5fa 0%, #001f5b 100%); /* 기본값(오후) */
+            position: relative;
         }
 
-        /* 시간대별 배경 클래스 정의 */
+        /* 시간대별 배경 */
         .card.weather.morning {
-            /* 아침: 파스텔 핑크 -> 하늘색 */
             background: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%);
         }
         
         .card.weather.afternoon {
-            /* 오후: 기존 (하늘색 -> 남색) */
             background: linear-gradient(135deg, #6dd5fa 0%, #001f5b 100%);
         }
 
         .card.weather.evening {
-            /* 저녁: 핑크 -> 주황색 */
             background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
         }
 
-        /* 텍스트 가독성을 위한 그림자 (밝은 배경일 때 대비) */
+        /* 아침용 텍스트 색상 조정 (밝은 배경 대비) */
         .card.weather.morning .weather-temp,
         .card.weather.morning .weather-header,
-        .card.weather.morning .weather-desc {
+        .card.weather.morning .weather-desc,
+        .card.weather.morning .weather-message {
             text-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            color: #4a4a4a; /* 아침은 배경이 밝으므로 글씨를 약간 어둡게 조정 */
+            color: #4a4a4a;
         }
         
-        /* 아침일 때 아이콘 색상 반전 해제 (검은색 계열로) */
-        .card.weather.morning .location-icon-img {
-             filter: none;
-             opacity: 0.6;
+        .card.weather.morning .material-symbols-rounded {
+             color: #4a4a4a;
         }
 
         .weather-header {
             display: flex;
             align-items: center;
             gap: 4px;
-            margin-bottom: 8px;
+            margin-bottom: 4px; /* 간격 살짝 줄임 */
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(255, 255, 255, 0.95);
             font-weight: 600;
             transition: color 1.5s;
         }
 
-        .location-icon-img {
-            width: 16px;
-            height: 16px;
-            object-fit: contain;
-            filter: brightness(0) invert(1);
-            transition: filter 1.5s;
+        /* 구글 아이콘 스타일 */
+        .material-symbols-rounded {
+            font-size: 18px;
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            color: white;
+            transition: color 1.5s;
         }
 
         .weather-content {
             display: flex;
             align-items: center;
             gap: 12px;
+            margin-bottom: 8px; /* 멘트 공간 확보 */
         }
 
         .weather-temp {
@@ -188,18 +187,28 @@
             color: #ffffff;
             transition: color 1.5s;
         }
-
-        .weather-desc {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 500;
-            transition: color 1.5s;
-        }
         
         .weather-status-icon {
             width: 40px;
             height: 40px;
             object-fit: contain;
+        }
+
+        /* [추가됨] 멘트 표시 영역 */
+        .weather-message {
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            transition: opacity 0.5s ease-in-out, color 1.5s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            opacity: 1;
+        }
+
+        /* 멘트 전환 애니메이션용 클래스 */
+        .fade-out {
+            opacity: 0;
         }
 
         /* 계획표 */
@@ -245,7 +254,7 @@
 
     <header>
         <div class="welcome-text" id="welcome-message">
-            OOO님<br>환영합니다
+            OOO님<br>환영합니다 <span class="today-info" id="clock-display"></span>
         </div>
         <button class="logout-btn" onclick="logout()">로그아웃</button>
     </header>
@@ -253,14 +262,14 @@
     <div class="dashboard-grid">
         <div class="card weather" id="weather-card">
             <div class="weather-header">
-                <img src="icon/location.png" alt="Loc" class="location-icon-img">
+                <span class="material-symbols-rounded">location_on</span>
                 <span id="location-text">위치 확인 중...</span>
             </div>
             <div class="weather-content">
                 <span class="weather-temp" id="current-temp">--°</span>
                 <img id="weather-icon" src="" alt="" class="weather-status-icon" style="display:none;">
-                <span class="weather-desc" id="weather-desc"></span>
             </div>
+            <div class="weather-message" id="weather-msg">날씨 정보를 불러오는 중...</div>
         </div>
 
         <div class="card plan" onclick="location.href='today.html'">
@@ -280,36 +289,47 @@
     </div>
 
     <script>
-        // [추가됨] 시간대 상태 관리 변수
+        // 전역 변수
         let lastAutoPhase = null;
         let pressTimer;
         const LONG_PRESS_DURATION = 6000; // 6초
+        let isLongPress = false; // 클릭과 롱프레스 구분용
+
+        // 멘트 관련 변수
+        let currentTempVal = 0;
+        let currentWeatherCode = 0; // WMO 코드
+        let messageInterval = null;
+        let msgIndex = 0; // 0: 날씨멘트, 1: 응원멘트
 
         window.onload = function() {
             const storedUser = localStorage.getItem('loginUser');
             
-            // 오늘 날짜 구하기
-            const today = new Date();
-            const month = today.getMonth() + 1;
-            const date = today.getDate();
-            const dateString = `${month}월 ${date}일`;
-
             if (!storedUser) {
                 alert("로그인이 필요합니다.");
                 window.location.href = 'index.html';
             } else {
-                document.getElementById('welcome-message').innerHTML = `${storedUser}님 <span class="today-date">${dateString}</span><br>환영합니다`;
+                // 환영 문구 초기 세팅 (시간은 updateTime에서 처리)
+                document.getElementById('welcome-message').innerHTML = `${storedUser}님<span class="today-info" id="clock-display"></span><br>환영합니다`;
             }
 
-            // 날씨 데이터 가져오기 (무료 버전)
-            getNoKeyWeather();
+            // 1. 시간 업데이트 (1초마다) - 날짜와 시간 표시
+            updateTime();
+            setInterval(updateTime, 1000);
 
-            // [추가됨] 초기 테마 설정 및 시간 체크 타이머 시작
+            // 2. 날씨 및 위치 데이터 가져오기 (초기 실행)
+            getWeatherData();
+            // 날씨 10분(600000ms)마다 업데이트
+            setInterval(getWeatherData, 600000);
+
+            // 3. 배경 테마 및 시간 체크 (1초마다)
             checkTimeAndSetTheme();
-            setInterval(checkTimeAndSetTheme, 1000); // 1초마다 시간 체크
+            setInterval(checkTimeAndSetTheme, 1000);
 
-            // [추가됨] 날씨 카드 롱프레스 이벤트 등록
-            setupLongPressEvent();
+            // 4. 이벤트 등록 (롱프레스 및 클릭 이동)
+            setupCardEvents();
+            
+            // 5. 멘트 롤링 시작 (5초마다)
+            startMessageRotation();
         }
 
         function logout() {
@@ -317,16 +337,33 @@
             window.location.href = 'index.html';
         }
 
-        // [추가됨] 시간 체크 및 테마 자동 변경 함수
+        // [추가됨] 날짜 및 시간 업데이트 함수
+        function updateTime() {
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? '오후' : '오전';
+            
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0시는 12시로 표시
+
+            const timeString = `${month}월 ${date}일 ${ampm} ${hours}:${minutes}`;
+            
+            // 시계 요소 업데이트
+            const clockEl = document.getElementById('clock-display');
+            if(clockEl) clockEl.innerText = timeString;
+        }
+
+        // [수정됨] 시간 체크 및 테마 자동 변경
         function checkTimeAndSetTheme() {
             const now = new Date();
             const hour = now.getHours();
             let currentPhase = '';
 
-            // 시간대 정의
-            // 아침: 06시 ~ 11시
-            // 오후: 12시 ~ 16시
-            // 저녁/밤: 17시 ~ 05시
+            // 아침: 06~11, 오후: 12~16, 저녁/밤: 17~05
             if (hour >= 6 && hour < 12) {
                 currentPhase = 'morning';
             } else if (hour >= 12 && hour < 17) {
@@ -335,31 +372,27 @@
                 currentPhase = 'evening';
             }
 
-            // 시간이 바뀌어 새로운 페이즈가 되었을 때만 강제 업데이트 (수동 변경 초기화)
+            // 시간이 바뀌면 자동으로 테마 업데이트
             if (currentPhase !== lastAutoPhase) {
                 setTheme(currentPhase);
                 lastAutoPhase = currentPhase;
             }
         }
 
-        // [추가됨] 테마 적용 함수
         function setTheme(phase) {
             const card = document.getElementById('weather-card');
-            // 기존 클래스 제거
             card.classList.remove('morning', 'afternoon', 'evening');
-            // 새 클래스 추가
             card.classList.add(phase);
         }
 
-        // [추가됨] 롱프레스 기능 구현 (6초)
-        function setupLongPressEvent() {
+        // [수정됨] 이벤트 처리: 클릭 시 페이지 이동, 꾹 누르면 배경 변경
+        function setupCardEvents() {
             const card = document.getElementById('weather-card');
             
-            // 이벤트 핸들러
-            const startPress = (e) => {
-                // 터치 스크롤 방지용 (선택적)
-                // e.preventDefault(); 
+            const startPress = () => {
+                isLongPress = false;
                 pressTimer = setTimeout(() => {
+                    isLongPress = true; // 6초 지남 -> 롱프레스로 간주
                     cycleThemeManual();
                 }, LONG_PRESS_DURATION);
             };
@@ -368,36 +401,45 @@
                 clearTimeout(pressTimer);
             };
 
-            // 마우스 이벤트
+            // 마우스/터치 시작
             card.addEventListener('mousedown', startPress);
-            card.addEventListener('mouseup', cancelPress);
-            card.addEventListener('mouseleave', cancelPress);
-
-            // 터치 이벤트
             card.addEventListener('touchstart', startPress);
-            card.addEventListener('touchend', cancelPress);
+
+            // 마우스/터치 끝
+            card.addEventListener('mouseup', (e) => {
+                cancelPress();
+                // 롱프레스가 아니면 페이지 이동
+                if (!isLongPress) {
+                    location.href = 'weather.html';
+                }
+            });
+            card.addEventListener('touchend', (e) => {
+                cancelPress();
+                if (!isLongPress) {
+                    // 모바일 터치 시 약간의 딜레이 후 이동 방지 등의 이슈가 있을 수 있어 click으로 처리되게 둠
+                    // 하지만 preventDefault가 없으면 click 이벤트도 발생하므로 여기선 로직만 처리
+                    location.href = 'weather.html'; 
+                }
+            });
+
+            // 영역 벗어남
+            card.addEventListener('mouseleave', cancelPress);
             card.addEventListener('touchcancel', cancelPress);
         }
 
-        // [추가됨] 수동 순환 함수
         function cycleThemeManual() {
             const card = document.getElementById('weather-card');
             let nextPhase = '';
-
-            if (card.classList.contains('morning')) {
-                nextPhase = 'afternoon';
-            } else if (card.classList.contains('afternoon')) {
-                nextPhase = 'evening';
-            } else {
-                nextPhase = 'morning'; // evening이거나 없으면 morning으로
-            }
+            if (card.classList.contains('morning')) nextPhase = 'afternoon';
+            else if (card.classList.contains('afternoon')) nextPhase = 'evening';
+            else nextPhase = 'morning';
 
             setTheme(nextPhase);
-            // 진동 피드백 (모바일 지원 시)
             if (navigator.vibrate) navigator.vibrate(100);
         }
 
-        function getNoKeyWeather() {
+        // [통합] 날씨 및 주소 가져오기 (Open-Meteo + OpenStreetMap Nominatim)
+        function getWeatherData() {
             if (!navigator.geolocation) {
                 setWeatherDefault();
                 return;
@@ -408,20 +450,46 @@
             function success(position) {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
+                
+                // 1. 날씨 데이터 (Open-Meteo)
+                const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
 
-                fetch(url)
-                    .then(response => response.json())
+                fetch(weatherUrl)
+                    .then(res => res.json())
                     .then(data => {
-                        document.getElementById('location-text').textContent = "현위치";
-                        const temp = Math.round(data.current_weather.temperature);
-                        document.getElementById('current-temp').textContent = `${temp}°`;
-                        const wmoCode = data.current_weather.weathercode;
-                        updateWeatherUI(wmoCode);
+                        currentTempVal = Math.round(data.current_weather.temperature);
+                        currentWeatherCode = data.current_weather.weathercode;
+                        
+                        document.getElementById('current-temp').textContent = `${currentTempVal}°`;
+                        updateWeatherIcon(currentWeatherCode);
+                        
+                        // 날씨 정보가 업데이트되었으므로 멘트 갱신 트리거
+                        updateMessageText(); 
                     })
                     .catch(err => {
                         console.error(err);
-                        setWeatherDefault();
+                        document.getElementById('current-temp').textContent = "--°";
+                    });
+
+                // 2. 주소 데이터 (Nominatim - 무료, 키 불필요)
+                const geoUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&accept-language=ko`;
+                
+                fetch(geoUrl)
+                    .then(res => res.json())
+                    .then(data => {
+                        // 주소 파싱 (구/동/면 등)
+                        let locationName = "현위치";
+                        if (data.address) {
+                            // 시 > 구 > 동 순으로 우선순위 체크
+                            locationName = data.address.borough || data.address.city || data.address.town || data.address.village || "알 수 없음";
+                            // 서울특별시 같은 광역시는 city에 들어옴
+                            if(locationName === "서울특별시") locationName = "서울";
+                        }
+                        document.getElementById('location-text').textContent = locationName;
+                    })
+                    .catch(err => {
+                        console.error("주소 변환 실패", err);
+                        document.getElementById('location-text').textContent = "위치 확인 불가";
                     });
             }
 
@@ -431,7 +499,8 @@
         }
 
         function setWeatherDefault() {
-            document.getElementById('location-text').textContent = "서울특별시";
+            document.getElementById('location-text').textContent = "서울";
+            // 서울 좌표 기본값
             const lat = 37.5665;
             const lon = 126.9780;
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
@@ -439,47 +508,106 @@
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
-                    const temp = Math.round(data.current_weather.temperature);
-                    document.getElementById('current-temp').textContent = `${temp}°`;
-                    updateWeatherUI(data.current_weather.weathercode);
+                    currentTempVal = Math.round(data.current_weather.temperature);
+                    currentWeatherCode = data.current_weather.weathercode;
+                    document.getElementById('current-temp').textContent = `${currentTempVal}°`;
+                    updateWeatherIcon(currentWeatherCode);
+                    updateMessageText();
                 })
                 .catch(() => {
                     document.getElementById('current-temp').textContent = "--°";
-                    document.getElementById('weather-desc').textContent = "연결 실패";
                 });
         }
 
-        function updateWeatherUI(code) {
-            let desc = "맑음";
-            let iconCode = "01d"; 
+        // 아이콘 업데이트 함수
+        function updateWeatherIcon(code) {
+            let iconCode = "01d";
+            // 간단 매핑
+            if (code === 0) iconCode = "01d"; // 맑음
+            else if (code <= 3) iconCode = "03d"; // 구름
+            else if (code <= 48) iconCode = "50d"; // 안개
+            else if (code <= 67) iconCode = "09d"; // 비
+            else if (code <= 77) iconCode = "13d"; // 눈
+            else if (code <= 82) iconCode = "09d"; // 소나기
+            else if (code >= 95) iconCode = "11d"; // 뇌우
 
-            if (code === 0) {
-                desc = "맑음";
-                iconCode = "01d";
-            } else if (code >= 1 && code <= 3) {
-                desc = "구름 많음";
-                iconCode = "03d";
-            } else if (code >= 45 && code <= 48) {
-                desc = "안개";
-                iconCode = "50d";
-            } else if (code >= 51 && code <= 67) {
-                desc = "비";
-                iconCode = "09d";
-            } else if (code >= 71 && code <= 77) {
-                desc = "눈";
-                iconCode = "13d";
-            } else if (code >= 80 && code <= 82) {
-                desc = "소나기";
-                iconCode = "09d";
-            } else if (code >= 95) {
-                desc = "뇌우";
-                iconCode = "11d";
-            }
-
-            document.getElementById('weather-desc').textContent = desc;
             const iconImg = document.getElementById('weather-icon');
             iconImg.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
             iconImg.style.display = 'block';
+        }
+
+        // [신규] 멘트 로직 생성기
+        function getDynamicMessages() {
+            const now = new Date();
+            const hour = now.getHours();
+            
+            let timeState = ""; // morning, afternoon, evening
+            let timeMent = ""; // 시간 관련 멘트
+            
+            if (hour >= 6 && hour < 12) {
+                timeState = "morning";
+                timeMent = "오늘도 활기찬 하루를 시작하세요";
+            } else if (hour >= 12 && hour < 17) {
+                timeState = "afternoon";
+                timeMent = "기분 좋은 오후 보내세요";
+            } else if (hour >= 17 && hour < 22) {
+                timeState = "evening";
+                timeMent = "오늘 하루도 수고하셨어요";
+            } else {
+                timeState = "night";
+                timeMent = "편안한 밤 되세요";
+            }
+
+            // 날씨 상태 텍스트
+            let weatherDesc = "맑은";
+            const c = currentWeatherCode;
+            if (c === 0) weatherDesc = "화창한";
+            else if (c <= 3) weatherDesc = "구름 낀";
+            else if (c <= 48) weatherDesc = "안개 낀";
+            else if (c <= 67 || (c >= 80 && c <= 82)) weatherDesc = "비 오는";
+            else if (c >= 71 && c <= 77) weatherDesc = "눈 내리는";
+            else if (c >= 95) weatherDesc = "천둥번개가 치는";
+
+            // 시간별 접미사
+            let timeWord = "시간";
+            if (timeState === "morning") timeWord = "아침";
+            else if (timeState === "afternoon") timeWord = "오후";
+            else if (timeState === "evening") timeWord = "저녁";
+            else timeWord = "밤";
+
+            // 멘트 조합
+            const msg1 = `${weatherDesc} ${timeWord}이네요`; // 예: 화창한 아침이네요, 비 오는 저녁이네요
+            const msg2 = timeMent; // 예: 오늘도 활기찬 하루를...
+
+            return [msg1, msg2];
+        }
+
+        // [신규] 멘트 회전 로직 (5초마다)
+        function startMessageRotation() {
+            // 즉시 한 번 실행
+            updateMessageText();
+
+            messageInterval = setInterval(() => {
+                const msgEl = document.getElementById('weather-msg');
+                // 페이드 아웃
+                msgEl.classList.add('fade-out');
+
+                // 0.5초(transition 시간) 뒤에 텍스트 바꾸고 페이드 인
+                setTimeout(() => {
+                    msgIndex = (msgIndex + 1) % 2; // 0 -> 1 -> 0
+                    updateMessageText(); // 텍스트 변경
+                    msgEl.classList.remove('fade-out'); // 페이드 인
+                }, 500);
+
+            }, 5000); // 5초 간격
+        }
+
+        function updateMessageText() {
+            const msgs = getDynamicMessages();
+            const msgEl = document.getElementById('weather-msg');
+            if(msgEl) {
+                msgEl.innerText = msgs[msgIndex];
+            }
         }
     </script>
 </body>
