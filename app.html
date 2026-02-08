@@ -23,7 +23,7 @@
             flex-direction: column;
             padding: 24px;
             overflow: hidden;
-            position: relative; /* 알람 오버레이 위치 잡기 위해 추가 */
+            position: relative;
         }
 
         /* 헤더 영역 */
@@ -53,6 +53,12 @@
             display: inline-block;
         }
 
+        .btn-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
         .logout-btn {
             font-size: 14px;
             font-weight: 500;
@@ -63,11 +69,27 @@
             border: none;
             cursor: pointer;
             transition: all 0.2s;
+            user-select: none; /* 텍스트 선택 방지 (롱프레스 시) */
         }
 
         .logout-btn:active {
             background: rgba(0, 0, 0, 0.05);
             transform: scale(0.95);
+        }
+
+        /* 미리듣기 버튼 스타일 */
+        .preview-btn {
+            font-size: 14px;
+            font-weight: 600;
+            color: #3182f6;
+            background: rgba(49, 130, 246, 0.1);
+            padding: 8px 16px;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: none; /* 기본 숨김 */
+            animation: popIn 0.3s ease;
         }
 
         /* 메인 컨텐츠 (그리드 레이아웃) */
@@ -126,7 +148,7 @@
             padding: 20px;
             justify-content: flex-start;
             color: white;
-            background: linear-gradient(135deg, #6dd5fa 0%, #001f5b 100%); /* 기본값(오후) */
+            background: linear-gradient(135deg, #6dd5fa 0%, #001f5b 100%);
             position: relative;
         }
 
@@ -143,7 +165,7 @@
             background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
         }
 
-        /* 아침용 텍스트 색상 조정 (밝은 배경 대비) */
+        /* 아침용 텍스트 색상 조정 */
         .card.weather.morning .weather-temp,
         .card.weather.morning .weather-header,
         .card.weather.morning .weather-desc,
@@ -160,14 +182,13 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            margin-bottom: 4px; /* 간격 살짝 줄임 */
+            margin-bottom: 4px;
             font-size: 14px;
             color: rgba(255, 255, 255, 0.95);
             font-weight: 600;
             transition: color 1.5s;
         }
 
-        /* 구글 아이콘 스타일 */
         .material-symbols-rounded {
             font-size: 18px;
             font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -179,7 +200,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 8px; /* 멘트 공간 확보 */
+            margin-bottom: 8px;
         }
 
         .weather-temp {
@@ -195,7 +216,6 @@
             object-fit: contain;
         }
 
-        /* [추가됨] 멘트 표시 영역 */
         .weather-message {
             font-size: 13px;
             font-weight: 500;
@@ -207,7 +227,6 @@
             opacity: 1;
         }
 
-        /* 멘트 전환 애니메이션용 클래스 */
         .fade-out {
             opacity: 0;
         }
@@ -250,19 +269,16 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* --------------------------------------------------------
-           [추가] 알람 오버레이 스타일 (블러 효과 적용)
-        -------------------------------------------------------- */
+        /* 알람 오버레이 스타일 (블러 효과 적용) */
         #alarmOverlay {
             position: fixed; 
             top: 0; 
             left: 0; 
             width: 100%; 
             height: 100%;
-            /* 배경 블러 처리 및 반투명 그라디언트 오버레이 */
-            background: rgba(0, 0, 0, 0.3); /* 약간 어둡게 깔아줌 */
-            backdrop-filter: blur(20px); /* 배경 블러 효과 */
-            -webkit-backdrop-filter: blur(20px); /* 사파리 지원 */
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             z-index: 10000; 
             display: none; 
             flex-direction: column; 
@@ -273,7 +289,6 @@
             animation: fadeInAlarm 0.5s ease;
         }
         
-        /* 알람 내용 컨테이너 (그라디언트 배경) */
         .alarm-content-box {
             background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%, #a18cd1 100%);
             background-size: 200% 200%;
@@ -316,7 +331,10 @@
         <div class="welcome-text" id="welcome-message">
             OOO님<br>환영합니다 <span class="today-info" id="clock-display"></span>
         </div>
-        <button class="logout-btn" onclick="logout()">로그아웃</button>
+        <div class="btn-container">
+            <button class="preview-btn" id="previewSoundBtn" onclick="playPreviewSound()">알림재생</button>
+            <button class="logout-btn" id="logoutBtn" onclick="logout()">로그아웃</button>
+        </div>
     </header>
 
     <div class="dashboard-grid">
@@ -353,21 +371,23 @@
         let lastAutoPhase = null;
         let pressTimer;
         const LONG_PRESS_DURATION = 6000; // 6초
-        let isLongPress = false; // 클릭과 롱프레스 구분용
+        let isLongPress = false; 
 
         // 멘트 관련 변수
         let currentTempVal = 0;
-        let currentWeatherCode = 0; // WMO 코드
+        let currentWeatherCode = 0; 
         let messageInterval = null;
-        let msgIndex = 0; // 0: 날씨멘트, 1: 응원멘트
+        let msgIndex = 0; 
 
-        // [추가] 리마인더 및 알람 관련 변수
+        // 리마인더 및 알람 관련 변수
         const API_URL = 'https://jaewondev.pythonanywhere.com';
         let reminders = [];
         let activeAlarm = null;
         let snoozedAlarms = [];
-        const sound1 = new Audio('https://drive.google.com/uc?export=download&id=1gR40urBgaolXetwLWWP6wQfVG80cGHrW');
-        const sound2 = new Audio('https://drive.google.com/uc?export=download&id=1kIfvcsX7c6t_faDUYvW7wsYipnSOn8Ot');
+        
+        // sound1: 인트로 (먼저 재생), sound2: 반복음 (인트로 후 재생)
+        const sound1 = new Audio('https://appreminder.corerepublix.kro.kr/other/sound2.mp3');
+        const sound2 = new Audio('https://appreminder.corerepublix.kro.kr/other/sound1.mp3');
         sound2.loop = true;
 
         window.onload = function() {
@@ -377,44 +397,82 @@
                 alert("로그인이 필요합니다.");
                 window.location.href = 'index.html';
             } else {
-                // 환영 문구 초기 세팅 (시간은 updateTime에서 처리)
                 document.getElementById('welcome-message').innerHTML = `${storedUser}님<span class="today-info" id="clock-display"></span><br>환영합니다`;
             }
 
-            // 1. 시간 업데이트 (1초마다) - 날짜와 시간 표시
             updateTime();
             setInterval(updateTime, 1000);
 
-            // 2. 날씨 및 위치 데이터 가져오기 (초기 실행)
             getWeatherData();
-            // 날씨 10분(600000ms)마다 업데이트
             setInterval(getWeatherData, 600000);
 
-            // 3. 배경 테마 및 시간 체크 (1초마다)
             checkTimeAndSetTheme();
             setInterval(checkTimeAndSetTheme, 1000);
 
-            // 4. 이벤트 등록 (롱프레스 및 클릭 이동)
             setupCardEvents();
+            setupLogoutLongPress(); // 로그아웃 롱프레스 이벤트 연결
             
-            // 5. 멘트 롤링 시작 (5초마다)
             startMessageRotation();
 
-            // [추가] 리마인더 데이터 로드 및 알람 체크 시작
             loadReminders();
             setInterval(checkAlarm, 1000);
 
-            // [추가] 오디오 정책 우회를 위한 이벤트 리스너 (사용자 첫 터치시 오디오 해금)
             document.body.addEventListener('touchstart', unlockAudio, { once: true });
             document.body.addEventListener('click', unlockAudio, { once: true });
         }
 
         function logout() {
-            localStorage.removeItem('loginUser');
-            window.location.href = 'index.html';
+            // 롱프레스가 아닐 때만 로그아웃 실행
+            if(!isLogoutLongPress) {
+                localStorage.removeItem('loginUser');
+                window.location.href = 'index.html';
+            }
         }
 
-        // [추가됨] 날짜 및 시간 업데이트 함수
+        // [추가] 로그아웃 버튼 롱프레스 로직
+        let logoutTimer;
+        let isLogoutLongPress = false;
+        
+        function setupLogoutLongPress() {
+            const btn = document.getElementById('logoutBtn');
+            if(!btn) return;
+
+            const startPress = (e) => {
+                isLogoutLongPress = false;
+                logoutTimer = setTimeout(() => {
+                    isLogoutLongPress = true;
+                    // 5초 후 알림재생 버튼 표시
+                    document.getElementById('previewSoundBtn').style.display = 'block';
+                    if (navigator.vibrate) navigator.vibrate(100);
+                }, 5000);
+            };
+
+            const endPress = (e) => {
+                clearTimeout(logoutTimer);
+            };
+
+            btn.addEventListener('mousedown', startPress);
+            btn.addEventListener('touchstart', startPress);
+            btn.addEventListener('mouseup', endPress);
+            btn.addEventListener('mouseleave', endPress);
+            btn.addEventListener('touchend', endPress);
+        }
+
+        // [추가] 알림 미리듣기 실행
+        function playPreviewSound() {
+            document.getElementById('alarmTitleText').innerText = "알림 미리듣기";
+            document.getElementById('alarmSubText').innerText = "알림음 테스트 중입니다.";
+            document.getElementById('alarmOverlay').style.display = 'flex';
+            
+            sound1.currentTime = 0;
+            sound2.currentTime = 0;
+            sound1.play().then(() => {
+                sound1.onended = () => {
+                    sound2.play();
+                };
+            }).catch(e => console.log("Audio Preview Error:", e));
+        }
+
         function updateTime() {
             const now = new Date();
             const month = now.getMonth() + 1;
@@ -425,22 +483,19 @@
             const ampm = hours >= 12 ? '오후' : '오전';
             
             hours = hours % 12;
-            hours = hours ? hours : 12; // 0시는 12시로 표시
+            hours = hours ? hours : 12; 
 
             const timeString = `${month}월 ${date}일 ${ampm} ${hours}:${minutes}`;
             
-            // 시계 요소 업데이트
             const clockEl = document.getElementById('clock-display');
             if(clockEl) clockEl.innerText = timeString;
         }
 
-        // [수정됨] 시간 체크 및 테마 자동 변경
         function checkTimeAndSetTheme() {
             const now = new Date();
             const hour = now.getHours();
             let currentPhase = '';
 
-            // 아침: 06~11, 오후: 12~16, 저녁/밤: 17~05
             if (hour >= 6 && hour < 12) {
                 currentPhase = 'morning';
             } else if (hour >= 12 && hour < 17) {
@@ -449,7 +504,6 @@
                 currentPhase = 'evening';
             }
 
-            // 시간이 바뀌면 자동으로 테마 업데이트
             if (currentPhase !== lastAutoPhase) {
                 setTheme(currentPhase);
                 lastAutoPhase = currentPhase;
@@ -462,14 +516,13 @@
             card.classList.add(phase);
         }
 
-        // [수정됨] 이벤트 처리: 클릭 시 페이지 이동, 꾹 누르면 배경 변경
         function setupCardEvents() {
             const card = document.getElementById('weather-card');
             
             const startPress = () => {
                 isLongPress = false;
                 pressTimer = setTimeout(() => {
-                    isLongPress = true; // 6초 지남 -> 롱프레스로 간주
+                    isLongPress = true; 
                     cycleThemeManual();
                 }, LONG_PRESS_DURATION);
             };
@@ -478,14 +531,11 @@
                 clearTimeout(pressTimer);
             };
 
-            // 마우스/터치 시작
             card.addEventListener('mousedown', startPress);
             card.addEventListener('touchstart', startPress);
 
-            // 마우스/터치 끝
             card.addEventListener('mouseup', (e) => {
                 cancelPress();
-                // 롱프레스가 아니면 페이지 이동
                 if (!isLongPress) {
                     location.href = 'weather.html';
                 }
@@ -493,13 +543,10 @@
             card.addEventListener('touchend', (e) => {
                 cancelPress();
                 if (!isLongPress) {
-                    // 모바일 터치 시 약간의 딜레이 후 이동 방지 등의 이슈가 있을 수 있어 click으로 처리되게 둠
-                    // 하지만 preventDefault가 없으면 click 이벤트도 발생하므로 여기선 로직만 처리
                     location.href = 'weather.html'; 
                 }
             });
 
-            // 영역 벗어남
             card.addEventListener('mouseleave', cancelPress);
             card.addEventListener('touchcancel', cancelPress);
         }
@@ -515,7 +562,6 @@
             if (navigator.vibrate) navigator.vibrate(100);
         }
 
-        // [통합] 날씨 및 주소 가져오기 (Open-Meteo + OpenStreetMap Nominatim)
         function getWeatherData() {
             if (!navigator.geolocation) {
                 setWeatherDefault();
@@ -528,7 +574,6 @@
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
                 
-                // 1. 날씨 데이터 (Open-Meteo)
                 const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
 
                 fetch(weatherUrl)
@@ -540,7 +585,6 @@
                         document.getElementById('current-temp').textContent = `${currentTempVal}°`;
                         updateWeatherIcon(currentWeatherCode);
                         
-                        // 날씨 정보가 업데이트되었으므로 멘트 갱신 트리거
                         updateMessageText(); 
                     })
                     .catch(err => {
@@ -548,18 +592,14 @@
                         document.getElementById('current-temp').textContent = "--°";
                     });
 
-                // 2. 주소 데이터 (Nominatim - 무료, 키 불필요)
                 const geoUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&accept-language=ko`;
                 
                 fetch(geoUrl)
                     .then(res => res.json())
                     .then(data => {
-                        // 주소 파싱 (구/동/면 등)
                         let locationName = "현위치";
                         if (data.address) {
-                            // 시 > 구 > 동 순으로 우선순위 체크
                             locationName = data.address.borough || data.address.city || data.address.town || data.address.village || "알 수 없음";
-                            // 서울특별시 같은 광역시는 city에 들어옴
                             if(locationName === "서울특별시") locationName = "서울";
                         }
                         document.getElementById('location-text').textContent = locationName;
@@ -577,7 +617,6 @@
 
         function setWeatherDefault() {
             document.getElementById('location-text').textContent = "서울";
-            // 서울 좌표 기본값
             const lat = 37.5665;
             const lon = 126.9780;
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
@@ -596,30 +635,27 @@
                 });
         }
 
-        // 아이콘 업데이트 함수
         function updateWeatherIcon(code) {
             let iconCode = "01d";
-            // 간단 매핑
-            if (code === 0) iconCode = "01d"; // 맑음
-            else if (code <= 3) iconCode = "03d"; // 구름
-            else if (code <= 48) iconCode = "50d"; // 안개
-            else if (code <= 67) iconCode = "09d"; // 비
-            else if (code <= 77) iconCode = "13d"; // 눈
-            else if (code <= 82) iconCode = "09d"; // 소나기
-            else if (code >= 95) iconCode = "11d"; // 뇌우
+            if (code === 0) iconCode = "01d"; 
+            else if (code <= 3) iconCode = "03d"; 
+            else if (code <= 48) iconCode = "50d"; 
+            else if (code <= 67) iconCode = "09d"; 
+            else if (code <= 77) iconCode = "13d"; 
+            else if (code <= 82) iconCode = "09d"; 
+            else if (code >= 95) iconCode = "11d"; 
 
             const iconImg = document.getElementById('weather-icon');
             iconImg.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
             iconImg.style.display = 'block';
         }
 
-        // [신규] 멘트 로직 생성기
         function getDynamicMessages() {
             const now = new Date();
             const hour = now.getHours();
             
-            let timeState = ""; // morning, afternoon, evening
-            let timeMent = ""; // 시간 관련 멘트
+            let timeState = ""; 
+            let timeMent = ""; 
             
             if (hour >= 6 && hour < 12) {
                 timeState = "morning";
@@ -635,7 +671,6 @@
                 timeMent = "편안한 밤 되세요";
             }
 
-            // 날씨 상태 텍스트
             let weatherDesc = "맑은";
             const c = currentWeatherCode;
             if (c === 0) weatherDesc = "화창한";
@@ -645,38 +680,32 @@
             else if (c >= 71 && c <= 77) weatherDesc = "눈 내리는";
             else if (c >= 95) weatherDesc = "천둥번개가 치는";
 
-            // 시간별 접미사
             let timeWord = "시간";
             if (timeState === "morning") timeWord = "아침";
             else if (timeState === "afternoon") timeWord = "오후";
             else if (timeState === "evening") timeWord = "저녁";
             else timeWord = "밤";
 
-            // 멘트 조합
-            const msg1 = `${weatherDesc} ${timeWord}이네요`; // 예: 화창한 아침이네요, 비 오는 저녁이네요
-            const msg2 = timeMent; // 예: 오늘도 활기찬 하루를...
+            const msg1 = `${weatherDesc} ${timeWord}이네요`; 
+            const msg2 = timeMent; 
 
             return [msg1, msg2];
         }
 
-        // [신규] 멘트 회전 로직 (5초마다)
         function startMessageRotation() {
-            // 즉시 한 번 실행
             updateMessageText();
 
             messageInterval = setInterval(() => {
                 const msgEl = document.getElementById('weather-msg');
-                // 페이드 아웃
                 msgEl.classList.add('fade-out');
 
-                // 0.5초(transition 시간) 뒤에 텍스트 바꾸고 페이드 인
                 setTimeout(() => {
-                    msgIndex = (msgIndex + 1) % 2; // 0 -> 1 -> 0
-                    updateMessageText(); // 텍스트 변경
-                    msgEl.classList.remove('fade-out'); // 페이드 인
+                    msgIndex = (msgIndex + 1) % 2; 
+                    updateMessageText(); 
+                    msgEl.classList.remove('fade-out'); 
                 }, 500);
 
-            }, 5000); // 5초 간격
+            }, 5000); 
         }
 
         function updateMessageText() {
@@ -687,9 +716,6 @@
             }
         }
 
-        /* --------------------------------------------------------
-           [추가] 리마인더 및 알람 로직 (backend 연동)
-        -------------------------------------------------------- */
         function unlockAudio() {
             sound1.play().then(() => { sound1.pause(); sound1.currentTime = 0; }).catch(() => {});
             sound2.play().then(() => { sound2.pause(); sound2.currentTime = 0; }).catch(() => {});
