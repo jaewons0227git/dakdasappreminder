@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>회원가입</title>
     <style>
-        /* 기본 스타일 유지 */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -32,9 +31,6 @@
             max-width: 500px;
             aspect-ratio: 1 / 1;
             margin: 0 auto;
-            border: none;
-            border-radius: 0;
-            box-shadow: none;
             position: relative;
         }
 
@@ -101,12 +97,46 @@
             border-bottom: 2px solid #ff3b30 !important;
         }
 
+        /* 아이디 중복확인 레이아웃 */
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .check-btn, .send-code-btn {
+            padding: 10px 14px;
+            background-color: #f2f4f6;
+            color: #4e5968;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            height: 45px;
+            margin-bottom: 2px;
+            transition: all 0.2s;
+        }
+        
+        .check-btn:active, .send-code-btn:active {
+            background-color: #e5e8eb;
+        }
+        
+        .send-code-btn:disabled, .check-btn:disabled {
+            background-color: #e5e8eb;
+            color: #b0b8c1;
+            cursor: not-allowed;
+        }
+
         .bottom-area {
             width: 100%;
             padding-bottom: 20px;
             background-color: #ffffff;
             padding-left: 24px;
             padding-right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .next-btn {
@@ -126,35 +156,16 @@
             background-color: #0050cc;
         }
         
-        /* 이메일 인증 레이아웃 */
-        .email-row {
-            display: flex;
-            gap: 10px;
-            align-items: flex-end;
-        }
-        
-        .send-code-btn {
-            padding: 10px 14px;
-            background-color: #f2f4f6;
-            color: #4e5968;
+        /* 뒤로가기 버튼 스타일 */
+        .back-btn {
+            width: 100%;
+            padding: 12px 0;
+            background-color: transparent;
+            color: #8b95a1;
+            font-size: 15px;
+            font-weight: 500;
             border: none;
-            border-radius: 8px;
-            font-size: 14px;
             cursor: pointer;
-            white-space: nowrap;
-            height: 45px;
-            margin-bottom: 2px;
-            transition: all 0.2s;
-        }
-        
-        .send-code-btn:active {
-            background-color: #e5e8eb;
-        }
-        
-        .send-code-btn:disabled {
-            background-color: #e5e8eb;
-            color: #b0b8c1;
-            cursor: not-allowed;
         }
 
         /* 모달 스타일 */
@@ -199,6 +210,7 @@
         </div>
         <div class="bottom-area">
             <button class="next-btn" onclick="goStep2()">다음</button>
+            <button class="back-btn" onclick="location.href='index.html'">로그인으로 돌아가기</button>
         </div>
     </div>
 
@@ -207,7 +219,10 @@
             <div class="title">사용할 아이디와<br>비밀번호를 입력해주세요</div>
             <div class="form-group">
                 <span class="input-label">아이디</span>
-                <input type="text" id="reg-id" class="toss-input" placeholder="영문, 숫자 포함" autocomplete="off">
+                <div class="input-row">
+                    <input type="text" id="reg-id" class="toss-input" placeholder="영문, 숫자 포함" autocomplete="off" oninput="resetIdCheck()">
+                    <button id="check-id-btn" class="check-btn" onclick="checkId()">중복확인</button>
+                </div>
             </div>
             <div class="form-group">
                 <span class="input-label">비밀번호</span>
@@ -220,6 +235,7 @@
         </div>
         <div class="bottom-area">
             <button class="next-btn" onclick="goStep3()">다음</button>
+            <button class="back-btn" onclick="goBackStep1()">이전 단계</button>
         </div>
     </div>
 
@@ -229,8 +245,8 @@
             
             <div class="form-group">
                 <span class="input-label">이메일</span>
-                <div class="email-row">
-                    <input type="email" id="reg-email" class="toss-input" placeholder="example@gmail.com" autocomplete="off">
+                <div class="input-row">
+                    <input type="email" id="reg-email" class="toss-input" placeholder="example@gmail.com" autocomplete="off" oninput="resetEmailStyle()">
                     <button id="send-btn" class="send-code-btn" onclick="sendCode()">인증번호 보내기</button>
                 </div>
             </div>
@@ -242,13 +258,17 @@
         </div>
         <div class="bottom-area">
             <button class="next-btn" id="final-btn" onclick="finalRegister()">회원가입 완료</button>
+            <button class="back-btn" onclick="goBackStep2()">이전 단계</button>
         </div>
     </div>
 
     <div id="custom-modal">메시지</div>
 
     <script>
-        let isVerified = false;
+        // 상태 변수
+        let isVerified = false; // 이메일 인증 완료 여부
+        let isIdChecked = false; // 아이디 중복확인 완료 여부
+        let timerInterval = null;
 
         function showModal(message) {
             const modal = document.getElementById('custom-modal');
@@ -257,11 +277,17 @@
             setTimeout(() => { modal.classList.remove('show'); }, 2000);
         }
 
+        // --- 화면 이동 함수 ---
         function goStep2() {
             const name = document.getElementById('reg-name').value;
             if(!name) { showModal("이름을 입력해주세요."); return; }
             document.getElementById('step1-screen').style.display = 'none';
             document.getElementById('step2-screen').style.display = 'flex';
+        }
+
+        function goBackStep1() {
+            document.getElementById('step2-screen').style.display = 'none';
+            document.getElementById('step1-screen').style.display = 'flex';
         }
 
         function goStep3() {
@@ -270,6 +296,7 @@
             const pwCheck = document.getElementById('reg-pw-check').value;
 
             if(!id) { showModal("아이디를 입력해주세요."); return; }
+            if(!isIdChecked) { showModal("아이디 중복확인을 해주세요."); return; }
             if(!pw) { showModal("비밀번호를 입력해주세요."); return; }
             if(pw !== pwCheck) { 
                 showModal("비밀번호가 일치하지 않습니다."); 
@@ -282,31 +309,67 @@
             document.getElementById('step3-screen').style.display = 'flex';
         }
 
-        // 인증코드 발송 (30초 쿨타임 적용)
+        function goBackStep2() {
+            document.getElementById('step3-screen').style.display = 'none';
+            document.getElementById('step2-screen').style.display = 'flex';
+        }
+
+        // --- 아이디 중복 확인 ---
+        function resetIdCheck() {
+            isIdChecked = false;
+            document.getElementById('reg-id').classList.remove('success', 'error');
+            document.getElementById('check-id-btn').disabled = false;
+            document.getElementById('check-id-btn').innerText = "중복확인";
+        }
+
+        function checkId() {
+            const id = document.getElementById('reg-id').value;
+            if(!id) { showModal("아이디를 입력하세요."); return; }
+
+            fetch('https://jaewondev.pythonanywhere.com/check-id', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.available) {
+                    isIdChecked = true;
+                    document.getElementById('reg-id').classList.add('success');
+                    document.getElementById('reg-id').classList.remove('error');
+                    document.getElementById('check-id-btn').innerText = "확인완료";
+                    document.getElementById('check-id-btn').disabled = true;
+                    showModal(data.message);
+                } else {
+                    isIdChecked = false;
+                    document.getElementById('reg-id').classList.add('error');
+                    document.getElementById('reg-id').classList.remove('success');
+                    showModal(data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showModal("서버 오류");
+            });
+        }
+
+        // --- 이메일 인증 ---
+        function resetEmailStyle() {
+            document.getElementById('reg-email').classList.remove('error');
+        }
+
         function sendCode() {
             const email = document.getElementById('reg-email').value;
             const sendBtn = document.getElementById('send-btn');
+            const emailInput = document.getElementById('reg-email');
             
             if(!email) { showModal("이메일을 입력해주세요."); return; }
             if(sendBtn.disabled) return;
 
             showModal("인증코드를 보내는 중...");
             
-            // 1차적으로 버튼 비활성화 (UX용)
+            // 요청 시에는 버튼만 잠시 잠금 (타이머 시작 X)
             sendBtn.disabled = true;
-            let count = 30;
-            sendBtn.innerText = `${count}초`;
-            
-            const timer = setInterval(() => {
-                count--;
-                if(count <= 0) {
-                    clearInterval(timer);
-                    sendBtn.disabled = false;
-                    sendBtn.innerText = "인증번호 보내기";
-                } else {
-                    sendBtn.innerText = `${count}초`;
-                }
-            }, 1000);
 
             fetch('https://jaewondev.pythonanywhere.com/send-verification-code', {
                 method: 'POST',
@@ -315,21 +378,44 @@
             })
             .then(res => res.json())
             .then(data => {
-                showModal(data.message);
-                if(!data.success) {
-                    // 실패 시 (이미 가입됨 등) 타이머 취소하고 버튼 복구할지 선택 가능하나
-                    // 여기선 '30초 제한' 메시지가 올 수도 있으므로 그대로 둠
-                    // 만약 즉시 재시도하게 하려면 여기서 타이머 클리어 가능
+                if(data.success) {
+                    // 성공했을 때만 타이머 시작
+                    showModal(data.message);
+                    emailInput.classList.remove('error');
+                    startTimer();
+                } else {
+                    // 실패 (중복 등) 시
+                    showModal(data.message);
+                    emailInput.classList.add('error'); // 빨간색 처리
+                    // 버튼 즉시 복구
+                    sendBtn.disabled = false; 
                 }
             })
             .catch(err => {
                 console.error(err);
                 showModal("서버 오류 발생");
-                // 오류 시 버튼 즉시 복구
-                clearInterval(timer);
                 sendBtn.disabled = false;
-                sendBtn.innerText = "인증번호 보내기";
             });
+        }
+
+        function startTimer() {
+            const sendBtn = document.getElementById('send-btn');
+            let count = 30;
+            sendBtn.innerText = `${count}초`;
+            sendBtn.disabled = true;
+            
+            if(timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                count--;
+                if(count <= 0) {
+                    clearInterval(timerInterval);
+                    sendBtn.disabled = false;
+                    sendBtn.innerText = "인증번호 보내기";
+                } else {
+                    sendBtn.innerText = `${count}초`;
+                }
+            }, 1000);
         }
 
         function checkVerifyCode() {
@@ -351,6 +437,9 @@
                         codeInput.classList.add('success');
                         showModal("인증되었습니다.");
                         codeInput.blur();
+                        if(timerInterval) clearInterval(timerInterval); // 인증되면 타이머 멈춤
+                        document.getElementById('send-btn').innerText = "인증완료";
+                        document.getElementById('send-btn').disabled = true;
                     } else {
                         isVerified = false;
                         codeInput.classList.remove('success');
