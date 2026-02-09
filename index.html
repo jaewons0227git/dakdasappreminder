@@ -40,13 +40,17 @@
             position: relative;
         }
 
-        /* 화면 컨테이너 (입력, 확인, 성공 화면 공통) */
+        /* 화면 컨테이너 */
         .screen {
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+        }
+
+        #input-screen {
+            display: none; /* 로딩 확인 후 표시 */
         }
 
         #success-screen {
@@ -73,7 +77,7 @@
             animation: fadeIn 0.5s ease-out;
         }
 
-        /* 입력 폼 스타일 (수정됨) */
+        /* 입력 폼 스타일 */
         .form-group {
             margin-bottom: 24px;
         }
@@ -99,6 +103,67 @@
             font-size: 20px;
         }
 
+        /* --- [수정됨] 자동 로그인 체크박스 스타일 --- */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            user-select: none;
+            width: fit-content; /* 클릭 영역 최적화 */
+        }
+
+        /* 실제 체크박스는 숨김 */
+        .checkbox-container input[type="checkbox"] {
+            display: none;
+        }
+
+        /* 커스텀 체크박스 네모 */
+        .custom-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #d1d6db;
+            border-radius: 6px;
+            margin-right: 10px;
+            position: relative;
+            transition: all 0.2s ease;
+            background-color: white;
+            flex-shrink: 0; /* 크기 줄어듦 방지 */
+        }
+
+        /* 체크되었을 때 스타일 */
+        .checkbox-container input:checked + .custom-checkbox {
+            background-color: #0064FF;
+            border-color: #0064FF;
+        }
+
+        /* [중요 수정] 체크 표시 가운데 정렬 (수학적 중앙 + 시각적 보정) */
+        .custom-checkbox::after {
+            content: '';
+            position: absolute;
+            left: 50%;   /* 박스의 가로 50% 지점 */
+            top: 50%;    /* 박스의 세로 50% 지점 */
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            /* translate(-50%, -60%): 정중앙(-50%, -50%)보다 위로(-60%) 살짝 올려야 
+               체크 모양(ㄴ)의 시각적 무게중심이 맞음 
+            */
+            transform: translate(-50%, -60%) rotate(45deg);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .checkbox-container input:checked + .custom-checkbox::after {
+            opacity: 1;
+        }
+
+        .checkbox-label {
+            font-size: 16px;
+            color: #4e5968;
+        }
+
         /* 하단 영역 (버튼) */
         .bottom-area {
             width: 100%;
@@ -108,7 +173,6 @@
             padding-right: 24px;
         }
 
-        /* 버튼 래퍼 */
         .next-btn-wrapper {
             width: 100%;
             display: flex;
@@ -117,7 +181,6 @@
             align-items: center;
         }
 
-        /* 파란색 확인 버튼 */
         .next-btn {
             width: 100%;
             padding: 18px 0;
@@ -135,7 +198,6 @@
             background-color: #0050cc;
         }
         
-        /* 회원가입 버튼 (작은 둥근 사각형) */
         .signup-btn {
             padding: 10px 20px;
             background-color: #f2f4f6;
@@ -171,7 +233,6 @@
             line-height: 1.4;
         }
 
-        /* 성공 아이콘 애니메이션 */
         .check-icon {
             width: 80px;
             height: 80px;
@@ -180,7 +241,48 @@
             opacity: 0;
         }
 
-        /* 자체 모달 (토스트/알림) 스타일 */
+        /* 구글 스타일 로딩 스피너 오버레이 */
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* SVG 스피너 스타일 */
+        .spinner-svg {
+            width: 50px;
+            height: 50px;
+            animation: rotate 2s linear infinite;
+        }
+
+        .spinner-circle {
+            stroke: #0064FF;
+            stroke-width: 4;
+            stroke-dasharray: 1, 200;
+            stroke-dashoffset: 0;
+            stroke-linecap: round; /* 둥근 끝부분 */
+            fill: none;
+            animation: dash 1.5s ease-in-out infinite;
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes dash {
+            0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+            50% { stroke-dasharray: 89, 200; stroke-dashoffset: -35px; }
+            100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124px; }
+        }
+
+        /* 자체 모달 스타일 */
         #custom-modal {
             position: absolute;
             top: 50%;
@@ -195,7 +297,7 @@
             opacity: 0;
             pointer-events: none;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            z-index: 1000;
+            z-index: 3000;
             width: 80%;
             text-align: center;
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
@@ -206,7 +308,6 @@
             transform: translate(-50%, -50%) scale(1);
         }
 
-        /* 애니메이션 정의 */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -221,6 +322,12 @@
 </head>
 <body>
 
+    <div id="loading-overlay">
+        <svg class="spinner-svg" viewBox="25 25 50 50">
+            <circle class="spinner-circle" cx="50" cy="50" r="20"></circle>
+        </svg>
+    </div>
+
     <div id="input-screen" class="screen">
         <div class="content-area">
             <div class="title">안녕하세요<br>로그인해주세요</div>
@@ -231,6 +338,12 @@
             <div class="form-group">
                 <input type="password" id="login-pw" class="toss-input" placeholder="비밀번호" autocomplete="off">
             </div>
+
+            <label class="checkbox-container">
+                <input type="checkbox" id="auto-login-check">
+                <span class="custom-checkbox"></span>
+                <span class="checkbox-label">자동 로그인</span>
+            </label>
         </div>
 
         <div class="bottom-area">
@@ -253,21 +366,39 @@
     <div id="custom-modal">메시지 내용</div>
 
     <script>
-        // 모달 표시 함수
+        // 페이지 로드 시 자동 로그인 확인
+        window.addEventListener('DOMContentLoaded', () => {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const inputScreen = document.getElementById('input-screen');
+
+            const localUser = localStorage.getItem('loginUser');
+            const sessionUser = sessionStorage.getItem('loginUser');
+
+            if (localUser || sessionUser) {
+                // 로그인 정보 존재 시 0.8초 후 이동 (스피너 보여줌)
+                setTimeout(() => {
+                    window.location.href = 'app.html';
+                }, 800);
+            } else {
+                // 정보 없으면 0.5초 후 로그인 화면 표시
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                    inputScreen.style.display = 'flex';
+                }, 500);
+            }
+        });
+
         function showModal(message) {
             const modal = document.getElementById('custom-modal');
             modal.innerText = message;
             modal.classList.add('show');
-            
-            setTimeout(() => {
-                modal.classList.remove('show');
-            }, 2000);
+            setTimeout(() => { modal.classList.remove('show'); }, 2000);
         }
 
-        // 로그인 요청 함수
         function attemptLogin() {
             const loginId = document.getElementById('login-id').value;
             const password = document.getElementById('login-pw').value;
+            const isAutoLogin = document.getElementById('auto-login-check').checked;
 
             if (!loginId || !password) {
                 showModal("아이디와 비밀번호를 입력해주세요.");
@@ -276,9 +407,7 @@
 
             fetch('https://jaewondev.pythonanywhere.com/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     login_id: loginId,
                     password: password
@@ -287,8 +416,13 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // 로그인 성공 처리
-                    localStorage.setItem('loginUser', data.name);
+                    if (isAutoLogin) {
+                        localStorage.setItem('loginUser', data.name);
+                        sessionStorage.removeItem('loginUser');
+                    } else {
+                        sessionStorage.setItem('loginUser', data.name);
+                        localStorage.removeItem('loginUser');
+                    }
                     
                     document.getElementById('input-screen').style.display = 'none';
                     document.getElementById('success-screen').style.display = 'flex';
@@ -297,7 +431,6 @@
                         window.location.href = 'app.html';
                     }, 1000);
                 } else {
-                    // 로그인 실패 (모달 표시)
                     showModal(data.message);
                 }
             })
@@ -309,4 +442,3 @@
     </script>
 </body>
 </html>
-
