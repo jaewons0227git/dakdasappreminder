@@ -241,20 +241,7 @@
             opacity: 0;
         }
 
-        /* 구글 스타일 로딩 스피너 (공통 애니메이션) */
-        #loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #ffffff;
-            z-index: 2000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
+        /* 구글 스타일 로딩 스피너 (SVG) */
         .spinner-svg {
             animation: rotate 2s linear infinite;
         }
@@ -269,8 +256,8 @@
         }
         
         /* 색상 변형 */
-        .stroke-blue { stroke: #0064FF; } /* 파란색 (흰 배경용) */
-        .stroke-white { stroke: #ffffff; } /* 흰색 (파란/어두운 배경용) */
+        .stroke-blue { stroke: #0064FF; } /* 파란색 */
+        .stroke-white { stroke: #ffffff; } /* 흰색 */
 
         /* 버튼용 작은 사이즈 */
         .spinner-btn {
@@ -294,7 +281,20 @@
             100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124px; }
         }
 
-        /* 모달 스타일 */
+        /* 모달 스타일 (공용) */
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         #custom-modal {
             position: absolute;
             top: 50%;
@@ -378,16 +378,29 @@
     <div id="custom-modal">메시지 내용</div>
 
     <script>
-        // 초기 로딩
+        // 초기 로딩 및 로그인 상태 확인 로직 (핵심 수정됨)
         window.addEventListener('DOMContentLoaded', () => {
             const loadingOverlay = document.getElementById('loading-overlay');
             const inputScreen = document.getElementById('input-screen');
-            const localUser = localStorage.getItem('loginUser');
-            const sessionUser = sessionStorage.getItem('loginUser');
+            
+            // 1. app.html과 호환되려면 무조건 localStorage에 loginUser가 있어야 함
+            const savedUser = localStorage.getItem('loginUser');
+            // 2. 자동 로그인 설정 여부 확인
+            const isAutoLogin = localStorage.getItem('isAutoLogin') === 'true';
+            // 3. 현재 브라우저 세션(탭)이 유지되고 있는지 확인
+            const isSessionActive = sessionStorage.getItem('sessionActive') === 'true';
 
-            if (localUser || sessionUser) {
+            // [판단 로직]
+            // 사용자 정보가 있고, (자동로그인이 켜져있거나 OR 현재 세션이 살아있으면) => 로그인 통과
+            if (savedUser && (isAutoLogin || isSessionActive)) {
                 setTimeout(() => { window.location.href = 'app.html'; }, 800);
             } else {
+                // 그 외의 경우 (자동로그인 껐는데 브라우저 닫았다 다시 켠 경우 등)
+                // localStorage에 남아있는 유저 정보를 지워서 app.html 오류 방지 및 로그아웃 처리
+                if(!isAutoLogin) {
+                    localStorage.removeItem('loginUser');
+                }
+                
                 setTimeout(() => {
                     loadingOverlay.style.display = 'none';
                     inputScreen.style.display = 'flex';
@@ -402,12 +415,11 @@
             setTimeout(() => { modal.classList.remove('show'); }, 2000);
         }
 
-        // 구글 스피너 버튼 로딩 함수
+        // 버튼 로딩 상태 (구글 스타일)
         function setButtonLoading(btnId, isLoading, originalText) {
             const btn = document.getElementById(btnId);
             if (isLoading) {
                 btn.disabled = true;
-                // 파란 버튼이라 흰색 스피너 사용
                 btn.innerHTML = `
                     <svg class="spinner-svg spinner-btn" viewBox="25 25 50 50">
                         <circle class="spinner-circle stroke-white" cx="50" cy="50" r="20"></circle>
@@ -446,13 +458,14 @@
                 setButtonLoading(loginBtnId, false, originalBtnText);
 
                 if (data.success) {
-                    if (isAutoLogin) {
-                        localStorage.setItem('loginUser', data.name);
-                        sessionStorage.removeItem('loginUser');
-                    } else {
-                        sessionStorage.setItem('loginUser', data.name);
-                        localStorage.removeItem('loginUser');
-                    }
+                    // [중요 수정] 로그인 성공 시 항상 localStorage에 저장 (app.html 호환성 위해)
+                    localStorage.setItem('loginUser', data.name);
+                    
+                    // 자동 로그인 여부 저장
+                    localStorage.setItem('isAutoLogin', isAutoLogin);
+                    
+                    // 현재 세션 활성화 표시 (브라우저 닫으면 사라짐)
+                    sessionStorage.setItem('sessionActive', 'true');
                     
                     document.getElementById('input-screen').style.display = 'none';
                     document.getElementById('success-screen').style.display = 'flex';
