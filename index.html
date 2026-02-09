@@ -14,7 +14,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* html, body 높이 설정 */
         html {
             height: 100%;
             display: flex;
@@ -28,11 +27,10 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            overflow: hidden; /* 스크롤 방지 */
-            
+            overflow: hidden;
             width: 100%;
             max-width: 500px;
-            aspect-ratio: 1 / 1; /* 1:1 비율 유지 */
+            aspect-ratio: 1 / 1;
             margin: 0 auto;
             border: none;
             border-radius: 0;
@@ -50,7 +48,7 @@
         }
 
         #input-screen {
-            display: none; /* 로딩 확인 후 표시 */
+            display: none;
         }
 
         #success-screen {
@@ -67,7 +65,6 @@
             flex-direction: column;
         }
 
-        /* 안내 문구 */
         .title {
             font-size: 26px;
             font-weight: 700;
@@ -77,7 +74,6 @@
             animation: fadeIn 0.5s ease-out;
         }
 
-        /* 입력 폼 스타일 */
         .form-group {
             margin-bottom: 24px;
         }
@@ -103,22 +99,20 @@
             font-size: 20px;
         }
 
-        /* --- [수정됨] 자동 로그인 체크박스 스타일 --- */
+        /* 자동 로그인 체크박스 스타일 */
         .checkbox-container {
             display: flex;
             align-items: center;
             margin-bottom: 20px;
             cursor: pointer;
             user-select: none;
-            width: fit-content; /* 클릭 영역 최적화 */
+            width: fit-content;
         }
 
-        /* 실제 체크박스는 숨김 */
         .checkbox-container input[type="checkbox"] {
             display: none;
         }
 
-        /* 커스텀 체크박스 네모 */
         .custom-checkbox {
             width: 22px;
             height: 22px;
@@ -128,28 +122,23 @@
             position: relative;
             transition: all 0.2s ease;
             background-color: white;
-            flex-shrink: 0; /* 크기 줄어듦 방지 */
+            flex-shrink: 0;
         }
 
-        /* 체크되었을 때 스타일 */
         .checkbox-container input:checked + .custom-checkbox {
             background-color: #0064FF;
             border-color: #0064FF;
         }
 
-        /* [중요 수정] 체크 표시 가운데 정렬 (수학적 중앙 + 시각적 보정) */
         .custom-checkbox::after {
             content: '';
             position: absolute;
-            left: 50%;   /* 박스의 가로 50% 지점 */
-            top: 50%;    /* 박스의 세로 50% 지점 */
+            left: 50%;
+            top: 50%;
             width: 5px;
             height: 10px;
             border: solid white;
             border-width: 0 2px 2px 0;
-            /* translate(-50%, -60%): 정중앙(-50%, -50%)보다 위로(-60%) 살짝 올려야 
-               체크 모양(ㄴ)의 시각적 무게중심이 맞음 
-            */
             transform: translate(-50%, -60%) rotate(45deg);
             opacity: 0;
             transition: opacity 0.2s;
@@ -192,10 +181,21 @@
             border-radius: 24px;
             cursor: pointer;
             transition: background-color 0.2s;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 58px;
         }
 
         .next-btn:active {
             background-color: #0050cc;
+        }
+
+        .next-btn:disabled {
+            background-color: #0064FF;
+            opacity: 0.9;
+            cursor: not-allowed;
         }
         
         .signup-btn {
@@ -241,7 +241,7 @@
             opacity: 0;
         }
 
-        /* 구글 스타일 로딩 스피너 오버레이 */
+        /* 구글 스타일 로딩 스피너 (공통 애니메이션) */
         #loading-overlay {
             position: absolute;
             top: 0;
@@ -255,21 +255,33 @@
             align-items: center;
         }
 
-        /* SVG 스피너 스타일 */
         .spinner-svg {
-            width: 50px;
-            height: 50px;
             animation: rotate 2s linear infinite;
         }
 
         .spinner-circle {
-            stroke: #0064FF;
             stroke-width: 4;
             stroke-dasharray: 1, 200;
             stroke-dashoffset: 0;
-            stroke-linecap: round; /* 둥근 끝부분 */
+            stroke-linecap: round;
             fill: none;
             animation: dash 1.5s ease-in-out infinite;
+        }
+        
+        /* 색상 변형 */
+        .stroke-blue { stroke: #0064FF; } /* 파란색 (흰 배경용) */
+        .stroke-white { stroke: #ffffff; } /* 흰색 (파란/어두운 배경용) */
+
+        /* 버튼용 작은 사이즈 */
+        .spinner-btn {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* 오버레이용 큰 사이즈 */
+        .spinner-large {
+            width: 50px;
+            height: 50px;
         }
 
         @keyframes rotate {
@@ -282,7 +294,7 @@
             100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124px; }
         }
 
-        /* 자체 모달 스타일 */
+        /* 모달 스타일 */
         #custom-modal {
             position: absolute;
             top: 50%;
@@ -323,8 +335,8 @@
 <body>
 
     <div id="loading-overlay">
-        <svg class="spinner-svg" viewBox="25 25 50 50">
-            <circle class="spinner-circle" cx="50" cy="50" r="20"></circle>
+        <svg class="spinner-svg spinner-large" viewBox="25 25 50 50">
+            <circle class="spinner-circle stroke-blue" cx="50" cy="50" r="20"></circle>
         </svg>
     </div>
 
@@ -348,7 +360,7 @@
 
         <div class="bottom-area">
             <div class="next-btn-wrapper">
-                <button class="next-btn" onclick="attemptLogin()">로그인</button>
+                <button id="login-btn" class="next-btn" onclick="attemptLogin()">로그인</button>
                 <button class="signup-btn" onclick="location.href='newaccount.html'">또는 회원가입</button>
             </div>
         </div>
@@ -366,21 +378,16 @@
     <div id="custom-modal">메시지 내용</div>
 
     <script>
-        // 페이지 로드 시 자동 로그인 확인
+        // 초기 로딩
         window.addEventListener('DOMContentLoaded', () => {
             const loadingOverlay = document.getElementById('loading-overlay');
             const inputScreen = document.getElementById('input-screen');
-
             const localUser = localStorage.getItem('loginUser');
             const sessionUser = sessionStorage.getItem('loginUser');
 
             if (localUser || sessionUser) {
-                // 로그인 정보 존재 시 0.8초 후 이동 (스피너 보여줌)
-                setTimeout(() => {
-                    window.location.href = 'app.html';
-                }, 800);
+                setTimeout(() => { window.location.href = 'app.html'; }, 800);
             } else {
-                // 정보 없으면 0.5초 후 로그인 화면 표시
                 setTimeout(() => {
                     loadingOverlay.style.display = 'none';
                     inputScreen.style.display = 'flex';
@@ -395,15 +402,36 @@
             setTimeout(() => { modal.classList.remove('show'); }, 2000);
         }
 
+        // 구글 스피너 버튼 로딩 함수
+        function setButtonLoading(btnId, isLoading, originalText) {
+            const btn = document.getElementById(btnId);
+            if (isLoading) {
+                btn.disabled = true;
+                // 파란 버튼이라 흰색 스피너 사용
+                btn.innerHTML = `
+                    <svg class="spinner-svg spinner-btn" viewBox="25 25 50 50">
+                        <circle class="spinner-circle stroke-white" cx="50" cy="50" r="20"></circle>
+                    </svg>
+                `;
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
         function attemptLogin() {
             const loginId = document.getElementById('login-id').value;
             const password = document.getElementById('login-pw').value;
             const isAutoLogin = document.getElementById('auto-login-check').checked;
+            const loginBtnId = 'login-btn';
+            const originalBtnText = '로그인';
 
             if (!loginId || !password) {
                 showModal("아이디와 비밀번호를 입력해주세요.");
                 return;
             }
+
+            setButtonLoading(loginBtnId, true);
 
             fetch('https://jaewondev.pythonanywhere.com/login', {
                 method: 'POST',
@@ -415,6 +443,8 @@
             })
             .then(response => response.json())
             .then(data => {
+                setButtonLoading(loginBtnId, false, originalBtnText);
+
                 if (data.success) {
                     if (isAutoLogin) {
                         localStorage.setItem('loginUser', data.name);
@@ -436,6 +466,7 @@
             })
             .catch((error) => {
                 console.error('Error:', error);
+                setButtonLoading(loginBtnId, false, originalBtnText);
                 showModal("서버와 통신할 수 없습니다.");
             });
         }
