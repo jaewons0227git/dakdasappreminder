@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>계정 설정</title>
+    <style>
+        /* 기본 리셋 및 폰트 (index.html과 동일) */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", Roboto, "Noto Sans KR", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100%;
+            background-color: #ffffff;
+            overflow: hidden;
+        }
+
+        /* 전체 레이아웃 (사이드바 + 컨텐츠) */
+        .container {
+            display: flex;
+            height: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* 사이드바 스타일 */
+        .sidebar {
+            width: 250px;
+            background-color: #f9fafb;
+            padding: 40px 20px;
+            border-right: 1px solid #e5e8eb;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sidebar-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #191f28;
+            margin-bottom: 30px;
+            padding-left: 10px;
+        }
+
+        .menu-item {
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #4e5968;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .menu-item:hover {
+            background-color: #f2f4f6;
+        }
+
+        .menu-item.active {
+            background-color: #e8f3ff;
+            color: #0064FF;
+            font-weight: 600;
+        }
+
+        /* 컨텐츠 영역 스타일 */
+        .content {
+            flex: 1;
+            padding: 60px 40px;
+            overflow-y: auto;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .content-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #191f28;
+            margin-bottom: 40px;
+        }
+
+        /* 정보 행 스타일 */
+        .info-row {
+            margin-bottom: 30px;
+        }
+
+        .info-label {
+            font-size: 14px;
+            color: #8b95a1;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .info-value {
+            font-size: 20px;
+            color: #333d4b;
+            font-weight: 500;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e8eb;
+        }
+
+        /* 입력 폼 스타일 */
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .toss-input {
+            width: 100%;
+            padding: 12px 0;
+            font-size: 18px;
+            color: #333d4b;
+            border: none;
+            border-bottom: 2px solid #e5e8eb;
+            outline: none;
+            transition: border-color 0.3s;
+            background: transparent;
+        }
+
+        .toss-input:focus {
+            border-bottom: 2px solid #0064FF;
+        }
+
+        /* 버튼 스타일 */
+        .action-btn {
+            padding: 14px 24px;
+            background-color: #0064FF;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 120px;
+            height: 50px;
+        }
+
+        .action-btn:active {
+            background-color: #0050cc;
+        }
+        
+        .action-btn:disabled {
+            background-color: #b0b8c1;
+            cursor: not-allowed;
+        }
+
+        .danger-btn {
+            background-color: #ff3b30;
+        }
+
+        .danger-btn:active {
+            background-color: #d6332a;
+        }
+
+        .sub-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #191f28;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        
+        .row-container {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        /* 뒤로가기 링크 */
+        .back-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #8b95a1;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* 모달 스타일 */
+        #custom-modal, #confirm-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background-color: rgba(51, 61, 75, 0.95);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 3000;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            min-width: 300px;
+        }
+
+        #custom-modal.show, #confirm-modal.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: auto;
+        }
+
+        /* 확인 모달 내부 */
+        .modal-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .modal-btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-yes { background-color: #ff3b30; color: white; }
+        .btn-no { background-color: #f2f4f6; color: #4e5968; }
+
+        /* 구글 스타일 로딩 스피너 (SVG) */
+        .spinner-svg { animation: rotate 2s linear infinite; }
+        .spinner-circle {
+            stroke-width: 4;
+            stroke-dasharray: 1, 200;
+            stroke-dashoffset: 0;
+            stroke-linecap: round;
+            fill: none;
+            animation: dash 1.5s ease-in-out infinite;
+        }
+        .stroke-white { stroke: #ffffff; }
+        .spinner-btn { width: 24px; height: 24px; }
+
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+        @keyframes dash {
+            0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+            50% { stroke-dasharray: 89, 200; stroke-dashoffset: -35px; }
+            100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124px; }
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+            .sidebar { width: 100%; padding: 20px; flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid #e5e8eb; }
+            .sidebar-title { display: none; }
+            .menu-item { white-space: nowrap; }
+            .content { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="app.html" class="back-link">닫기</a>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-title">설정</div>
+            <div class="menu-item active" onclick="showTab('general', this)">일반</div>
+            <div class="menu-item" onclick="showTab('privacy', this)">개인정보</div>
+            <div class="menu-item" onclick="showTab('advanced', this)">고급</div>
+        </div>
+
+        <div class="content">
+            
+            <div id="tab-general" class="tab-content active">
+                <div class="content-title">일반</div>
+                <div class="info-row">
+                    <span class="info-label">닉네임</span>
+                    <div class="info-value" id="disp-name">로딩 중...</div>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">이메일</span>
+                    <div class="info-value" id="disp-email">로딩 중...</div>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">계정 생성일</span>
+                    <div class="info-value" id="disp-date">로딩 중...</div>
+                </div>
+            </div>
+
+            <div id="tab-privacy" class="tab-content">
+                <div class="content-title">개인정보</div>
+                
+                <div class="sub-title">비밀번호 변경</div>
+                <div class="input-group">
+                    <span class="info-label">현재 비밀번호</span>
+                    <input type="password" id="current-pw" class="toss-input" placeholder="현재 비밀번호 입력">
+                </div>
+                <div class="input-group">
+                    <span class="info-label">새 비밀번호</span>
+                    <input type="password" id="new-pw" class="toss-input" placeholder="새 비밀번호 입력">
+                </div>
+                <button id="btn-pw-change" class="action-btn" onclick="changePassword()">비밀번호 변경</button>
+
+                <div class="sub-title">이메일 변경</div>
+                <div class="input-group">
+                    <span class="info-label">새 이메일 주소</span>
+                    <div class="row-container">
+                        <input type="email" id="new-email" class="toss-input" placeholder="변경할 이메일 입력">
+                        <button id="btn-send-code" class="action-btn" style="min-width: 100px;" onclick="requestEmailChange()">인증번호 전송</button>
+                    </div>
+                </div>
+                <div class="input-group" id="email-verify-area" style="display:none;">
+                    <span class="info-label">인증번호</span>
+                    <div class="row-container">
+                        <input type="number" id="verify-code" class="toss-input" placeholder="6자리 코드">
+                        <button id="btn-verify-code" class="action-btn" style="min-width: 80px;" onclick="verifyEmailChange()">확인</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-advanced" class="tab-content">
+                <div class="content-title">고급</div>
+                
+                <div class="sub-title" style="color:#ff3b30;">계정 삭제</div>
+                <p style="color:#4e5968; margin-bottom:20px; line-height:1.5;">
+                    계정을 삭제하면 모든 플래너 데이터와 리마인더 설정이 영구적으로 삭제되며 복구할 수 없습니다.<br>
+                    신중하게 결정해주세요.
+                </p>
+                <button class="action-btn danger-btn" onclick="openDeleteModal()">계정 삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-modal">메시지</div>
+
+    <div id="confirm-modal">
+        <div id="confirm-content" class="modal-content">
+            </div>
+    </div>
+
+    <script>
+        const API_URL = "https://jaewondev.pythonanywhere.com";
+        const currentUser = localStorage.getItem('loginUser');
+
+        // 초기 로드 시 로그인 체크 및 정보 호출
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!currentUser) {
+                alert("로그인이 필요합니다.");
+                window.location.href = 'index.html';
+                return;
+            }
+            fetchUserInfo();
+        });
+
+        // 탭 전환 함수
+        function showTab(tabName, element) {
+            // 탭 활성화 스타일
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            // 컨텐츠 표시
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // 토스트 메시지
+        function showToast(msg) {
+            const modal = document.getElementById('custom-modal');
+            modal.innerText = msg;
+            modal.classList.add('show');
+            setTimeout(() => modal.classList.remove('show'), 2000);
+        }
+
+        // 버튼 로딩 스피너
+        function setBtnLoading(btnId, isLoading, text) {
+            const btn = document.getElementById(btnId);
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = `
+                    <svg class="spinner-svg spinner-btn" viewBox="25 25 50 50">
+                        <circle class="spinner-circle stroke-white" cx="50" cy="50" r="20"></circle>
+                    </svg>`;
+            } else {
+                btn.disabled = false;
+                btn.innerText = text;
+            }
+        }
+
+        // 사용자 정보 불러오기
+        function fetchUserInfo() {
+            fetch(`${API_URL}/get-user-info`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: currentUser })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('disp-name').innerText = data.name;
+                    document.getElementById('disp-email').innerText = data.email;
+                    document.getElementById('disp-date').innerText = data.created_at;
+                } else {
+                    showToast("정보 로드 실패");
+                }
+            })
+            .catch(() => showToast("서버 통신 오류"));
+        }
+
+        // --- 개인정보: 비밀번호 변경 ---
+        function changePassword() {
+            const oldPw = document.getElementById('current-pw').value;
+            const newPw = document.getElementById('new-pw').value;
+            
+            if(!oldPw || !newPw) { showToast("모두 입력해주세요."); return; }
+
+            setBtnLoading('btn-pw-change', true, "");
+
+            fetch(`${API_URL}/change-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    name: currentUser, 
+                    old_password: oldPw, 
+                    new_password: newPw 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                setBtnLoading('btn-pw-change', false, "비밀번호 변경");
+                showToast(data.message);
+                if(data.success) {
+                    document.getElementById('current-pw').value = '';
+                    document.getElementById('new-pw').value = '';
+                }
+            })
+            .catch(() => {
+                setBtnLoading('btn-pw-change', false, "비밀번호 변경");
+                showToast("서버 오류");
+            });
+        }
+
+        // --- 개인정보: 이메일 변경 요청 ---
+        function requestEmailChange() {
+            const newEmail = document.getElementById('new-email').value;
+            if(!newEmail) { showToast("새 이메일을 입력해주세요."); return; }
+
+            setBtnLoading('btn-send-code', true, "");
+
+            fetch(`${API_URL}/request-email-change`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ new_email: newEmail })
+            })
+            .then(res => res.json())
+            .then(data => {
+                setBtnLoading('btn-send-code', false, "인증번호 전송");
+                showToast(data.message);
+                if(data.success) {
+                    document.getElementById('email-verify-area').style.display = 'block';
+                }
+            })
+            .catch(() => {
+                setBtnLoading('btn-send-code', false, "인증번호 전송");
+                showToast("서버 오류");
+            });
+        }
+
+        // --- 개인정보: 이메일 변경 확인 ---
+        function verifyEmailChange() {
+            const newEmail = document.getElementById('new-email').value;
+            const code = document.getElementById('verify-code').value;
+            
+            if(!code) { showToast("인증코드를 입력해주세요."); return; }
+
+            setBtnLoading('btn-verify-code', true, "");
+
+            fetch(`${API_URL}/verify-email-change`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    name: currentUser,
+                    new_email: newEmail,
+                    code: code 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                setBtnLoading('btn-verify-code', false, "확인");
+                showToast(data.message);
+                if(data.success) {
+                    // 화면 갱신 및 입력창 초기화
+                    document.getElementById('disp-email').innerText = newEmail;
+                    document.getElementById('new-email').value = '';
+                    document.getElementById('verify-code').value = '';
+                    document.getElementById('email-verify-area').style.display = 'none';
+                }
+            })
+            .catch(() => {
+                setBtnLoading('btn-verify-code', false, "확인");
+                showToast("서버 오류");
+            });
+        }
+
+        // --- 고급: 계정 삭제 (1단계: 비번 확인, 2단계: 최종 확인) ---
+        function openDeleteModal() {
+            const modal = document.getElementById('confirm-modal');
+            const content = document.getElementById('confirm-content');
+            
+            // 1단계: 비밀번호 입력
+            content.innerHTML = `
+                <div style="margin-bottom:10px;">본인 확인을 위해<br>비밀번호를 입력해주세요.</div>
+                <input type="password" id="del-pw" class="modal-input" placeholder="비밀번호">
+                <div class="modal-btn-row">
+                    <button class="modal-btn btn-no" onclick="closeModal()">취소</button>
+                    <button class="modal-btn btn-yes" onclick="confirmDeleteStep1()">확인</button>
+                </div>
+            `;
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('confirm-modal').classList.remove('show');
+        }
+
+        function confirmDeleteStep1() {
+            const pw = document.getElementById('del-pw').value;
+            if(!pw) { showToast("비밀번호를 입력하세요."); return; }
+            
+            // 2단계: 최종 경고
+            const content = document.getElementById('confirm-content');
+            content.innerHTML = `
+                <div style="margin-bottom:10px; font-weight:bold; color:#ff3b30;">정말 삭제하시겠습니까?</div>
+                <div style="font-size:14px; color:#aaa;">이 작업은 되돌릴 수 없습니다.</div>
+                <div class="modal-btn-row">
+                    <button class="modal-btn btn-no" onclick="closeModal()">취소</button>
+                    <button class="modal-btn btn-yes" onclick="finalDelete('${pw}')">예, 삭제합니다</button>
+                </div>
+            `;
+        }
+
+        function finalDelete(password) {
+            fetch(`${API_URL}/delete-account`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    name: currentUser,
+                    password: password
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    localStorage.removeItem('loginUser');
+                    localStorage.removeItem('isAutoLogin');
+                    sessionStorage.removeItem('sessionActive');
+                    alert("계정이 삭제되었습니다.");
+                    window.location.href = 'index.html';
+                } else {
+                    showToast(data.message);
+                    closeModal(); // 실패 시 모달 닫기
+                }
+            })
+            .catch(() => {
+                showToast("서버 오류");
+                closeModal();
+            });
+        }
+    </script>
+</body>
+</html>
