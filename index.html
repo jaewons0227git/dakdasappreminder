@@ -49,8 +49,7 @@
             justify-content: space-between;
         }
 
-        /* 확인 화면 및 성공 화면은 처음에 숨김 */
-        #confirm-screen, #success-screen {
+        #success-screen {
             display: none;
             justify-content: center;
             padding-bottom: 20px;
@@ -74,85 +73,48 @@
             animation: fadeIn 0.5s ease-out;
         }
 
-        /* 입력된 번호 표시 영역 */
-        .input-wrapper {
-            position: relative;
-            width: 100%;
+        /* 입력 폼 스타일 (수정됨) */
+        .form-group {
+            margin-bottom: 24px;
         }
 
-        .input-display {
-            font-size: 32px;
-            font-weight: 600;
+        .toss-input {
+            width: 100%;
+            padding: 10px 0;
+            font-size: 20px;
             color: #333d4b;
-            height: 40px;
-            margin-bottom: 8px;
-            letter-spacing: 2px;
-            display: flex;
-            align-items: center;
+            border: none;
+            border-bottom: 2px solid #e5e8eb;
+            outline: none;
+            transition: border-color 0.3s;
+            background: transparent;
         }
 
-        /* 커서 깜빡임 효과 */
-        .cursor {
-            display: inline-block;
-            width: 2px;
-            height: 32px;
-            background-color: #0064FF;
-            margin-left: 2px;
-            animation: blink 1s infinite;
+        .toss-input:focus {
+            border-bottom: 2px solid #0064FF;
         }
 
-        /* 파란줄 */
-        .blue-line {
-            width: 100%;
-            height: 2px;
-            background-color: #0064FF;
-            transition: all 0.3s ease;
+        .toss-input::placeholder {
+            color: #b0b8c1;
+            font-size: 20px;
         }
 
-        /* 하단 영역 (키패드 + 버튼) */
+        /* 하단 영역 (버튼) */
         .bottom-area {
             width: 100%;
             padding-bottom: 20px;
             background-color: #ffffff;
-            padding-left: 10px;
-            padding-right: 10px;
-        }
-
-        /* 키패드 그리드 */
-        .keypad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .key {
-            padding: 15px 0;
-            font-size: 24px;
-            font-weight: 500;
-            color: #333d4b;
-            background: none;
-            border: none;
-            cursor: pointer;
-            outline: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.2s;
-            border-radius: 24px;
-        }
-
-        .key:active {
-            background-color: #f2f4f6;
+            padding-left: 24px;
+            padding-right: 24px;
         }
 
         /* 버튼 래퍼 */
         .next-btn-wrapper {
-            padding: 0 10px;
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
+            align-items: center;
         }
 
         /* 파란색 확인 버튼 */
@@ -172,25 +134,25 @@
         .next-btn:active {
             background-color: #0050cc;
         }
-
-        /* 취소 버튼 스타일 */
-        .cancel-btn {
-            width: 100%;
-            padding: 15px 0;
-            background-color: transparent;
-            color: #8b95a1;
-            font-size: 16px;
+        
+        /* 회원가입 버튼 (작은 둥근 사각형) */
+        .signup-btn {
+            padding: 10px 20px;
+            background-color: #f2f4f6;
+            color: #4e5968;
+            font-size: 14px;
             font-weight: 500;
             border: none;
+            border-radius: 20px;
             cursor: pointer;
-            border-radius: 24px;
-        }
-        
-        .cancel-btn:active {
-            background-color: #f2f4f6;
+            transition: background-color 0.2s;
         }
 
-        /* 확인 화면 및 성공 화면 스타일 (중앙 정렬) */
+        .signup-btn:active {
+            background-color: #e5e8eb;
+        }
+
+        /* 성공 화면 스타일 */
         .confirm-content {
             flex-grow: 1;
             display: flex;
@@ -209,12 +171,6 @@
             line-height: 1.4;
         }
 
-        .confirm-subtitle {
-            font-size: 15px;
-            color: #8b95a1;
-            font-weight: 400;
-        }
-
         /* 성공 아이콘 애니메이션 */
         .check-icon {
             width: 80px;
@@ -224,12 +180,33 @@
             opacity: 0;
         }
 
-        /* 애니메이션 정의 */
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+        /* 자체 모달 (토스트/알림) 스타일 */
+        #custom-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background-color: rgba(51, 61, 75, 0.95);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 1000;
+            width: 80%;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
-        
+
+        #custom-modal.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* 애니메이션 정의 */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -246,52 +223,20 @@
 
     <div id="input-screen" class="screen">
         <div class="content-area">
-            <div class="title">지정번호를<br>입력해주세요</div>
+            <div class="title">안녕하세요<br>로그인해주세요</div>
             
-            <div class="input-wrapper">
-                <div class="input-display">
-                    <span id="number-text"></span><span class="cursor"></span>
-                </div>
-                <div class="blue-line"></div>
+            <div class="form-group">
+                <input type="text" id="login-id" class="toss-input" placeholder="아이디 또는 이메일" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <input type="password" id="login-pw" class="toss-input" placeholder="비밀번호" autocomplete="off">
             </div>
         </div>
 
         <div class="bottom-area">
-            <div class="keypad">
-                <button class="key" onclick="addNumber('1')">1</button>
-                <button class="key" onclick="addNumber('2')">2</button>
-                <button class="key" onclick="addNumber('3')">3</button>
-                <button class="key" onclick="addNumber('4')">4</button>
-                <button class="key" onclick="addNumber('5')">5</button>
-                <button class="key" onclick="addNumber('6')">6</button>
-                <button class="key" onclick="addNumber('7')">7</button>
-                <button class="key" onclick="addNumber('8')">8</button>
-                <button class="key" onclick="addNumber('9')">9</button>
-                <button class="key"></button> 
-                <button class="key" onclick="addNumber('0')">0</button>
-                <button class="key" onclick="deleteNumber()">←</button>
-            </div>
-
             <div class="next-btn-wrapper">
-                <button class="next-btn" id="nextBtn" onclick="submitNumber()">다음</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="confirm-screen" class="screen">
-        <div class="confirm-content">
-            <div class="confirm-title">
-                <span id="user-name-display"></span>님이<br>맞으신가요?
-            </div>
-            <div class="confirm-subtitle">
-                본인이 맞다면 확인 버튼을 눌러주세요.
-            </div>
-        </div>
-        
-        <div class="bottom-area">
-            <div class="next-btn-wrapper">
-                <button class="next-btn" onclick="finalConfirm()">확인</button>
-                <button class="cancel-btn" onclick="cancelLogin()">취소</button>
+                <button class="next-btn" onclick="attemptLogin()">로그인</button>
+                <button class="signup-btn" onclick="location.href='newaccount.html'">또는 회원가입</button>
             </div>
         </div>
     </div>
@@ -305,87 +250,61 @@
         </div>
     </div>
 
+    <div id="custom-modal">메시지 내용</div>
+
     <script>
-        let currentNumber = "";
-        const displayElement = document.getElementById('number-text');
-
-        // 숫자 입력 함수
-        function addNumber(num) {
-            if (currentNumber.length < 20) {
-                currentNumber += num;
-                updateDisplay();
-            }
+        // 모달 표시 함수
+        function showModal(message) {
+            const modal = document.getElementById('custom-modal');
+            modal.innerText = message;
+            modal.classList.add('show');
+            
+            setTimeout(() => {
+                modal.classList.remove('show');
+            }, 2000);
         }
 
-        // 숫자 삭제 함수
-        function deleteNumber() {
-            currentNumber = currentNumber.slice(0, -1);
-            updateDisplay();
-        }
+        // 로그인 요청 함수
+        function attemptLogin() {
+            const loginId = document.getElementById('login-id').value;
+            const password = document.getElementById('login-pw').value;
 
-        // 화면 업데이트
-        function updateDisplay() {
-            displayElement.textContent = currentNumber;
-        }
-
-        // Flask 백엔드와 통신하는 함수
-        function submitNumber() {
-            if (currentNumber.length === 0) {
-                alert("번호를 입력해주세요.");
+            if (!loginId || !password) {
+                showModal("아이디와 비밀번호를 입력해주세요.");
                 return;
             }
 
-            // 로컬 서버로 요청 전송
-            fetch('https://jaewondev.pythonanywhere.com/check-number', {
+            fetch('https://jaewondev.pythonanywhere.com/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ number: currentNumber })
+                body: JSON.stringify({ 
+                    login_id: loginId,
+                    password: password
+                })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.exists) {
-                    showConfirmScreen(data.data.name);
+                if (data.success) {
+                    // 로그인 성공 처리
+                    localStorage.setItem('loginUser', data.name);
+                    
+                    document.getElementById('input-screen').style.display = 'none';
+                    document.getElementById('success-screen').style.display = 'flex';
+
+                    setTimeout(function() {
+                        window.location.href = 'app.html';
+                    }, 1000);
                 } else {
-                    alert(data.message);
+                    // 로그인 실패 (모달 표시)
+                    showModal(data.message);
                 }
             })
             .catch((error) => {
                 console.error('Error:', error);
-                alert("서버와 통신할 수 없습니다.");
+                showModal("서버와 통신할 수 없습니다.");
             });
-        }
-
-        // 확인 화면 표시 함수
-        function showConfirmScreen(name) {
-            document.getElementById('user-name-display').innerText = name;
-            document.getElementById('input-screen').style.display = 'none';
-            document.getElementById('confirm-screen').style.display = 'flex';
-        }
-
-        // 취소 버튼 (처음으로 돌아가기)
-        function cancelLogin() {
-            currentNumber = "";
-            updateDisplay();
-            document.getElementById('confirm-screen').style.display = 'none';
-            document.getElementById('input-screen').style.display = 'flex';
-        }
-
-        // 최종 확인 버튼 (로컬스토리지 저장 -> 성공 화면 -> 페이지 이동)
-        function finalConfirm() {
-            // [중요] 로그인한 사용자 이름을 브라우저에 저장
-            const userName = document.getElementById('user-name-display').innerText;
-            localStorage.setItem('loginUser', userName);
-
-            // 화면 전환
-            document.getElementById('confirm-screen').style.display = 'none';
-            document.getElementById('success-screen').style.display = 'flex';
-
-            // 1초 후 app.html로 이동
-            setTimeout(function() {
-                window.location.href = 'app.html';
-            }, 1000);
         }
     </script>
 </body>
