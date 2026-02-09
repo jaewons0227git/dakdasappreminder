@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>회원가입</title>
     <style>
-        /* 기본 스타일은 index.html과 동일하게 유지 */
+        /* 기본 스타일 유지 */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -44,10 +44,10 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            display: none; /* 기본적으로 숨김, JS로 제어 */
+            display: none;
         }
         
-        #step1-screen { display: flex; } /* 첫 화면만 보임 */
+        #step1-screen { display: flex; }
 
         .content-area {
             padding: 40px 24px 0 24px;
@@ -94,7 +94,7 @@
         }
         
         .toss-input.success {
-            border-bottom: 2px solid #2ecc71 !important; /* 초록색 */
+            border-bottom: 2px solid #2ecc71 !important;
         }
         
         .toss-input.error {
@@ -126,11 +126,6 @@
             background-color: #0050cc;
         }
         
-        .next-btn:disabled {
-            background-color: #b0b8c1;
-            cursor: not-allowed;
-        }
-
         /* 이메일 인증 레이아웃 */
         .email-row {
             display: flex;
@@ -149,10 +144,17 @@
             white-space: nowrap;
             height: 45px;
             margin-bottom: 2px;
+            transition: all 0.2s;
         }
         
         .send-code-btn:active {
             background-color: #e5e8eb;
+        }
+        
+        .send-code-btn:disabled {
+            background-color: #e5e8eb;
+            color: #b0b8c1;
+            cursor: not-allowed;
         }
 
         /* 모달 스타일 */
@@ -229,7 +231,7 @@
                 <span class="input-label">이메일</span>
                 <div class="email-row">
                     <input type="email" id="reg-email" class="toss-input" placeholder="example@gmail.com" autocomplete="off">
-                    <button class="send-code-btn" onclick="sendCode()">인증번호 보내기</button>
+                    <button id="send-btn" class="send-code-btn" onclick="sendCode()">인증번호 보내기</button>
                 </div>
             </div>
 
@@ -246,10 +248,8 @@
     <div id="custom-modal">메시지</div>
 
     <script>
-        // 전역 변수
         let isVerified = false;
 
-        // 모달 표시
         function showModal(message) {
             const modal = document.getElementById('custom-modal');
             modal.innerText = message;
@@ -257,16 +257,13 @@
             setTimeout(() => { modal.classList.remove('show'); }, 2000);
         }
 
-        // Step 1 -> 2 이동
         function goStep2() {
             const name = document.getElementById('reg-name').value;
             if(!name) { showModal("이름을 입력해주세요."); return; }
-            
             document.getElementById('step1-screen').style.display = 'none';
             document.getElementById('step2-screen').style.display = 'flex';
         }
 
-        // Step 2 -> 3 이동
         function goStep3() {
             const id = document.getElementById('reg-id').value;
             const pw = document.getElementById('reg-pw').value;
@@ -281,17 +278,35 @@
             } else {
                 document.getElementById('reg-pw-check').classList.remove('error');
             }
-
             document.getElementById('step2-screen').style.display = 'none';
             document.getElementById('step3-screen').style.display = 'flex';
         }
 
-        // 인증코드 발송 요청
+        // 인증코드 발송 (30초 쿨타임 적용)
         function sendCode() {
             const email = document.getElementById('reg-email').value;
+            const sendBtn = document.getElementById('send-btn');
+            
             if(!email) { showModal("이메일을 입력해주세요."); return; }
+            if(sendBtn.disabled) return;
 
             showModal("인증코드를 보내는 중...");
+            
+            // 1차적으로 버튼 비활성화 (UX용)
+            sendBtn.disabled = true;
+            let count = 30;
+            sendBtn.innerText = `${count}초`;
+            
+            const timer = setInterval(() => {
+                count--;
+                if(count <= 0) {
+                    clearInterval(timer);
+                    sendBtn.disabled = false;
+                    sendBtn.innerText = "인증번호 보내기";
+                } else {
+                    sendBtn.innerText = `${count}초`;
+                }
+            }, 1000);
 
             fetch('https://jaewondev.pythonanywhere.com/send-verification-code', {
                 method: 'POST',
@@ -301,21 +316,21 @@
             .then(res => res.json())
             .then(data => {
                 showModal(data.message);
+                if(!data.success) {
+                    // 실패 시 (이미 가입됨 등) 타이머 취소하고 버튼 복구할지 선택 가능하나
+                    // 여기선 '30초 제한' 메시지가 올 수도 있으므로 그대로 둠
+                    // 만약 즉시 재시도하게 하려면 여기서 타이머 클리어 가능
+                }
             })
             .catch(err => {
                 console.error(err);
                 showModal("서버 오류 발생");
+                // 오류 시 버튼 즉시 복구
+                clearInterval(timer);
+                sendBtn.disabled = false;
+                sendBtn.innerText = "인증번호 보내기";
             });
         }
-
-        // 인증코드 실시간 확인 아님 -> 버튼 누를 때 확인? 
-        // 아뇨, 요청사항: "인증번호를 입력해서 요청하면... 맞다면 초록색으로 변하게"
-        // 사용자가 입력하고 별도 버튼 없이 확인하려면 oninput 등에서 트리거해야 하지만, 
-        // 여기서는 '회원가입 완료' 전에 확인 버튼이 없으므로, 
-        // 입력 필드 옆에 확인 버튼이 있거나, 입력 후 엔터 혹은 특정 길이 도달 시 체크가 필요합니다.
-        // UI상 심플함을 위해 '인증번호 입력하는 텍스트박스'에 값이 6자리가 되면 자동으로 체크 요청하거나,
-        // 별도의 작은 확인 버튼이 있는 것이 좋으나, 요청에 "인증번호 보내기 버튼이 있고 그아래에 인증번호를 입력하게 해줘... 인증번호가 맞으면... 초록색"이라고 했습니다.
-        // 6자리가 되면 자동 체크하도록 구현하겠습니다.
 
         function checkVerifyCode() {
             const code = document.getElementById('reg-code').value;
@@ -335,7 +350,6 @@
                         codeInput.classList.remove('error');
                         codeInput.classList.add('success');
                         showModal("인증되었습니다.");
-                        // 포커스 해제
                         codeInput.blur();
                     } else {
                         isVerified = false;
@@ -351,7 +365,6 @@
             }
         }
 
-        // 최종 회원가입 요청
         function finalRegister() {
             if(!isVerified) { showModal("이메일 인증을 완료해주세요."); return; }
 
